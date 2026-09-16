@@ -1,0 +1,405 @@
+:root {
+	--nsh-bar-bg: var(--nsh-accent);
+	--nsh-bar-text: var(--nsh-on-accent);
+	--nsh-bar-tint: rgba(255, 255, 255, .14);
+}
+
+:root,
+:root[data-nsh-theme="indigo"] {
+	--nsh-accent: #3f51b5;
+	--nsh-accent-strong: #303f9f;
+	--nsh-accent-soft: #e8eaf6;
+	--nsh-on-accent: #ffffff;
+
+	--nsh-bg: #eceff4;
+	--nsh-surface: #ffffff;
+	--nsh-surface-2: #f5f6fa;
+	--nsh-surface-3: #e9ebf2;
+	--nsh-border: #d3d7e3;
+	--nsh-text: #1d2233;
+	--nsh-text-muted: #6b7285;
+
+	--nsh-danger: #d2453c;
+	--nsh-ok: #2e9e6b;
+	--nsh-warn: #d98324;
+	--nsh-shadow: 0 2px 6px rgba(20, 25, 50, .10), 0 8px 24px rgba(20, 25, 50, .08);
+	--nsh-shadow-sm: 0 1px 3px rgba(20, 25, 50, .14);
+
+	--nsh-diagram-text: #071c26;
+	--nsh-line: #131a2b;
+	--nsh-fill: #ffffff;
+	--nsh-neutral-fill: #f0f0f0;
+	--nsh-hatch: #b9bfd0;
+	--nsh-input-focus: #4a4f63;
+
+	--nsh-c-loop: #ddddff;
+	--nsh-c-cond: #ddffff;
+	--nsh-c-case: #b2e5ff;
+	--nsh-c-in: #ffe7e7;
+	--nsh-c-out: #ddffdd;
+	--nsh-c-stmt: #ffffcc;
+	--nsh-c-comment: #e5e5e5;
+}
+
+:root[data-nsh-theme="dark"] {
+	--nsh-accent: #7d8cff;
+	--nsh-accent-strong: #98a4ff;
+	--nsh-accent-soft: #262b45;
+	--nsh-on-accent: #10142a;
+
+	--nsh-bg: #171a21;
+	--nsh-surface: #21252e;
+	--nsh-surface-2: #272c37;
+	--nsh-surface-3: #31374a;
+	--nsh-border: #3a4152;
+	--nsh-text: #e6e9f2;
+	--nsh-text-muted: #98a0b3;
+
+	--nsh-danger: #ff7a70;
+	--nsh-ok: #5fd3a0;
+	--nsh-warn: #f0b454;
+	--nsh-shadow: 0 2px 6px rgba(0, 0, 0, .45), 0 10px 28px rgba(0, 0, 0, .40);
+	--nsh-shadow-sm: 0 1px 3px rgba(0, 0, 0, .5);
+
+	--nsh-diagram-text: #e4e8f2;
+	--nsh-line: #8b93a8;
+	--nsh-fill: #232833;
+	--nsh-neutral-fill: #2c3240;
+	--nsh-hatch: #545c72;
+	--nsh-input-focus: #ffffff;
+
+	--nsh-c-loop: #2c3157;
+	--nsh-c-cond: #1f3b46;
+	--nsh-c-case: #2a5468;
+	--nsh-c-in: #48292d;
+	--nsh-c-out: #27452f;
+	--nsh-c-stmt: #4a4426;
+	--nsh-c-comment: #33384a;
+
+	--nsh-bar-bg: #1d212b;
+	--nsh-bar-text: #e6e9f2;
+	--nsh-bar-tint: rgba(255, 255, 255, .07);
+}
+
+:root[data-nsh-theme="midnight"] {
+	--nsh-accent: #34d3e0;
+	--nsh-accent-strong: #62e2ec;
+	--nsh-accent-soft: #0d2c31;
+	--nsh-on-accent: #04161a;
+
+	--nsh-bg: #05070d;
+	--nsh-surface: #0c1019;
+	--nsh-surface-2: #121826;
+	--nsh-surface-3: #1a2234;
+	--nsh-border: #24304a;
+	--nsh-text: #dce6f5;
+	--nsh-text-muted: #8593ad;
+
+	--nsh-danger: #ff7b86;
+	--nsh-ok: #4fe0a6;
+	--nsh-warn: #ffc266;
+	--nsh-shadow: 0 2px 6px rgba(0, 0, 0, .7), 0 12px 30px rgba(0, 0, 0, .6);
+	--nsh-shadow-sm: 0 1px 3px rgba(0, 0, 0, .7);
+
+	--nsh-diagram-text: #d9e4f3;
+	--nsh-line: #6f88ad;
+	--nsh-fill: #111826;
+	--nsh-neutral-fill: #182133;
+	--nsh-hatch: #3d5070;
+	--nsh-input-focus: #ffffff;
+
+	--nsh-c-loop: #1b2550;
+	--nsh-c-cond: #0f3540;
+	--nsh-c-case: #17495c;
+	--nsh-c-in: #431f28;
+	--nsh-c-out: #123b2b;
+	--nsh-c-stmt: #3f3a1b;
+	--nsh-c-comment: #1d2536;
+
+	--nsh-bar-bg: #090d16;
+	--nsh-bar-text: #dce6f5;
+	--nsh-bar-tint: rgba(255, 255, 255, .07);
+}
+
+:root[data-nsh-theme="forest"] {
+	--nsh-accent: #00796b;
+	--nsh-accent-strong: #00584d;
+	--nsh-accent-soft: #dcf1ed;
+	--nsh-on-accent: #ffffff;
+
+	--nsh-bg: #eef3f1;
+	--nsh-surface: #ffffff;
+	--nsh-surface-2: #f3f8f6;
+	--nsh-surface-3: #e4eeeb;
+	--nsh-border: #cbdcd7;
+	--nsh-text: #14241f;
+	--nsh-text-muted: #5f7973;
+
+	--nsh-danger: #c2453d;
+	--nsh-ok: #2e9e6b;
+	--nsh-warn: #c97c1c;
+	--nsh-shadow: 0 2px 6px rgba(10, 40, 35, .10), 0 8px 24px rgba(10, 40, 35, .08);
+	--nsh-shadow-sm: 0 1px 3px rgba(10, 40, 35, .14);
+
+	--nsh-diagram-text: #0a231e;
+	--nsh-line: #12332c;
+	--nsh-fill: #ffffff;
+	--nsh-neutral-fill: #eef4f2;
+	--nsh-hatch: #a9c6bf;
+	--nsh-input-focus: #33574f;
+
+	--nsh-c-loop: #dcf0ea;
+	--nsh-c-cond: #ddf3ff;
+	--nsh-c-case: #b4e2f2;
+	--nsh-c-in: #ffe9e2;
+	--nsh-c-out: #e0f6dc;
+	--nsh-c-stmt: #fdf6d2;
+	--nsh-c-comment: #e8eded;
+}
+
+:root[data-nsh-theme="amber"] {
+	--nsh-accent: #b4581a;
+	--nsh-accent-strong: #8d4212;
+	--nsh-accent-soft: #fdeade;
+	--nsh-on-accent: #ffffff;
+
+	--nsh-bg: #f6f1ea;
+	--nsh-surface: #fffdfa;
+	--nsh-surface-2: #f8f2ea;
+	--nsh-surface-3: #eee4d7;
+	--nsh-border: #e0d2c0;
+	--nsh-text: #29211a;
+	--nsh-text-muted: #7c6a58;
+
+	--nsh-danger: #c2413b;
+	--nsh-ok: #2f9060;
+	--nsh-warn: #c4820f;
+	--nsh-shadow: 0 2px 6px rgba(60, 40, 20, .10), 0 8px 24px rgba(60, 40, 20, .08);
+	--nsh-shadow-sm: 0 1px 3px rgba(60, 40, 20, .16);
+
+	--nsh-diagram-text: #241c14;
+	--nsh-line: #2e2318;
+	--nsh-fill: #fffdfa;
+	--nsh-neutral-fill: #f3ece2;
+	--nsh-hatch: #c9b69e;
+	--nsh-input-focus: #5a4737;
+
+	--nsh-c-loop: #e9e4ff;
+	--nsh-c-cond: #dff2fb;
+	--nsh-c-case: #bce3f2;
+	--nsh-c-in: #ffe5e0;
+	--nsh-c-out: #e2f5dd;
+	--nsh-c-stmt: #fdf1cc;
+	--nsh-c-comment: #eae5dd;
+}
+
+:root[data-nsh-theme="rose"] {
+	--nsh-accent: #ad1457;
+	--nsh-accent-strong: #880e45;
+	--nsh-accent-soft: #fce4ef;
+	--nsh-on-accent: #ffffff;
+
+	--nsh-bg: #f4eef1;
+	--nsh-surface: #ffffff;
+	--nsh-surface-2: #fbf4f7;
+	--nsh-surface-3: #f0e2e9;
+	--nsh-border: #e2ccd7;
+	--nsh-text: #24151c;
+	--nsh-text-muted: #7d6570;
+
+	--nsh-danger: #c2413b;
+	--nsh-ok: #2f9060;
+	--nsh-warn: #c4820f;
+	--nsh-shadow: 0 2px 6px rgba(60, 20, 40, .10), 0 8px 24px rgba(60, 20, 40, .08);
+	--nsh-shadow-sm: 0 1px 3px rgba(60, 20, 40, .16);
+
+	--nsh-diagram-text: #1f141a;
+	--nsh-line: #2a1a22;
+	--nsh-fill: #ffffff;
+	--nsh-neutral-fill: #f6eef2;
+	--nsh-hatch: #cdaebd;
+	--nsh-input-focus: #5a3f4b;
+
+	--nsh-c-loop: #ecdcff;
+	--nsh-c-cond: #ddf3ff;
+	--nsh-c-case: #b6e2f4;
+	--nsh-c-in: #ffe2ea;
+	--nsh-c-out: #ddf5e2;
+	--nsh-c-stmt: #fdf3cf;
+	--nsh-c-comment: #ece4e8;
+}
+
+body {
+	background-color: var(--nsh-bg);
+	color: var(--nsh-text);
+}
+
+.w3-indigo,
+.w3-hover-indigo:hover {
+	color: var(--nsh-on-accent) !important;
+	background-color: var(--nsh-accent) !important;
+}
+
+.w3-white,
+.w3-hover-white:hover {
+	color: var(--nsh-text) !important;
+	background-color: var(--nsh-surface) !important;
+}
+
+.w3-light-grey,
+.w3-hover-light-grey:hover,
+.w3-light-gray,
+.w3-hover-light-gray:hover {
+	color: var(--nsh-text) !important;
+	background-color: var(--nsh-surface-2) !important;
+}
+
+.w3-button:hover {
+	color: var(--nsh-text) !important;
+	background-color: var(--nsh-surface-3) !important;
+}
+
+.w3-text-indigo,
+.w3-hover-text-indigo:hover {
+	color: var(--nsh-accent) !important;
+}
+
+.w3-text-dark-grey,
+.w3-text-dark-gray,
+.w3-hover-text-dark-gray:hover {
+	color: var(--nsh-text) !important;
+}
+
+.w3-text-red,
+.w3-hover-text-red:hover {
+	color: var(--nsh-danger) !important;
+}
+
+.w3-text-teal,
+.w3-hover-text-teal:hover {
+	color: var(--nsh-ok) !important;
+}
+
+.w3-text-pink,
+.w3-hover-text-pink:hover {
+	color: var(--nsh-danger) !important;
+}
+
+.w3-border-indigo,
+.w3-hover-border-indigo:hover {
+	border-color: var(--nsh-accent) !important;
+}
+
+.w3-card-4 {
+	box-shadow: var(--nsh-shadow) !important;
+}
+
+#header.w3-indigo,
+#footer.w3-indigo {
+	background-color: var(--nsh-bar-bg) !important;
+	color: var(--nsh-bar-text) !important;
+}
+
+#header {
+	border-bottom: 1px solid var(--nsh-border);
+}
+
+#footer {
+	border-top: 1px solid var(--nsh-border);
+}
+
+#footer a {
+	color: var(--nsh-bar-text) !important;
+}
+
+.w3-dropdown-content {
+	background-color: var(--nsh-surface) !important;
+	color: var(--nsh-text) !important;
+	border-radius: 10px;
+	overflow: hidden;
+	border: 1px solid var(--nsh-border);
+}
+
+.w3-dropdown-hover:hover>.w3-button:first-child {
+	background-color: var(--nsh-surface-3) !important;
+	color: var(--nsh-text) !important;
+}
+
+.w3-input {
+	border-bottom: 1px solid var(--nsh-border);
+	background-color: var(--nsh-surface-2);
+	color: var(--nsh-text);
+}
+
+.Nassi-Shneiderman {
+	color: var(--nsh-diagram-text);
+}
+
+.for-statement .statements,
+.while-statement>.container>.statements,
+.dowhile-statement>.container>.statements {
+	background-color: var(--nsh-fill);
+}
+
+.switch>.body .case .test-value,
+.try-statement>.margin.left,
+.catch-statement>.margin.left,
+.finally-statement>.margin.left,
+.exception {
+	background-color: var(--nsh-neutral-fill);
+}
+
+.for-statement .controller .top,
+.for-statement .controller .bottom,
+.call-statement .margin {
+	background-color: transparent;
+	background-image: repeating-linear-gradient(45deg,
+			var(--nsh-hatch) 0, var(--nsh-hatch) 1px,
+			transparent 1px, transparent 4px) !important;
+}
+
+.input-for-statement {
+	color: var(--nsh-diagram-text);
+}
+
+.input-for-statement:focus,
+.input-for-statement:hover {
+	color: var(--nsh-input-focus) !important;
+}
+
+.input-for-statement::placeholder {
+	color: var(--nsh-text-muted);
+	opacity: .8;
+	font-style: italic;
+}
+
+::selection {
+	background: var(--nsh-accent);
+	color: var(--nsh-on-accent);
+}
+
+* {
+	scrollbar-color: var(--nsh-border) transparent;
+	scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--nsh-border);
+	border-radius: 8px;
+	border: 2px solid transparent;
+	background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--nsh-text-muted);
+	background-clip: content-box;
+}

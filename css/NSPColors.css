@@ -1,0 +1,37 @@
+/* Colores de los bloques. Los valores de cada tema estan en NSHTheme.css.
+   Este archivo se activa y desactiva con el switch "Colorear". */
+
+.for-statement,
+.while-statement,
+.dowhile-statement {
+	background-color: var(--nsh-c-loop, #ddddff);
+}
+
+.conditional-statement,
+.conditional-statement .body .case .test-value {
+	background-color: var(--nsh-c-cond, #ddffff);
+}
+
+.conditional-statement .body .case .test-value {
+	background-color: var(--nsh-c-case, #b2e5ff);
+}
+
+.input-statement {
+	background-color: var(--nsh-c-in, #ffe7e7);
+}
+
+.output-statement {
+	background-color: var(--nsh-c-out, #ddffdd);
+}
+
+.call-statement,
+.block-statement,
+.assignment-statement,
+.return-statement,
+.break-statement {
+	background-color: var(--nsh-c-stmt, #ffffcc);
+}
+
+.comment-statement {
+	background-color: var(--nsh-c-comment, #e5e5e5);
+}

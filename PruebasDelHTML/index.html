@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>NS Sharp</title>
+	<meta name="description"
+		content="NS Sharp es un editor online de diagramas de Nassi-Shneiderman extendidos (XNSD) para aprender a programar. Armá diagramas arrastrando bloques, organizalos en clases y métodos, y guardalos en formato .nsplus. Evolución de NS Plus, compatible con sus archivos." />
+	<meta name="author" content="Federico Szymsiowicz" />
+	<meta name="theme-color" content="#3f51b5" />
+	<link rel="canonical" href="https://nsharport.netlify.app/" />
+
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="NS Sharp" />
+	<meta property="og:locale" content="es_AR" />
+	<meta property="og:url" content="https://nsharport.netlify.app/" />
+	<meta property="og:title" content="NS Sharp" />
+	<meta property="og:description"
+		content="Editor online de diagramas de Nassi-Shneiderman extendidos. Bloques arrastrables, clases y métodos, temas claro y oscuro, y archivos .nsplus compatibles con NS Plus." />
+	<meta property="og:image" content="https://nsharport.netlify.app/img/nsharp-favicon.png" />
+	<meta property="og:image:width" content="192" />
+	<meta property="og:image:height" content="192" />
+	<meta name="twitter:card" content="summary" />
+
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "WebApplication",
+		"name": "NS Sharp",
+		"alternateName": ["NSharp", "NS#"],
+		"url": "https://nsharport.netlify.app/",
+		"description": "Editor online de diagramas de Nassi-Shneiderman extendidos (XNSD) para aprender a programar. Evolución de NS Plus, compatible con sus archivos .nsplus.",
+		"applicationCategory": "EducationalApplication",
+		"operatingSystem": "Cualquiera con navegador web",
+		"inLanguage": "es",
+		"isAccessibleForFree": true,
+		"offers": { "@type": "Offer", "price": "0", "priceCurrency": "ARS" },
+		"author": [
+			{ "@type": "Person", "name": "Federico Szymsiowicz" }
+		]
+	}
+	</script>
+	<link rel="icon" href="img/nsharp-favicon.png" type="image/png">
+	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="css/w3.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPDiagram.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPEditor.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPMenu.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPPDF.css" />
+	<link rel="stylesheet" type="text/css" href="css/animations.css" />
+	<link rel="stylesheet" type="text/css" href="css/switch-button.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSHTheme.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSharp.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSHUml.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPColors.css" id="css/NSPColors.css" />
+</head>
+
+<body>
+	<header id="header" class="w3-bar w3-indigo w3-top">
+		<img src="img/ort-logo-blanco.png" class="w3-image w3-bar-item" id="ortLogo" alt="Logo ORT" />
+		<img src="img/nsharp-logo-white.png" class="w3-image w3-bar-item" id="nsplusLogo" alt="Logo NS Sharp" />
+
+		<input id="inputProjectName" type="text" class="w3-bar-item w3-light-grey w3-input" placeholder="Proyecto sin título">
+
+		<div id="nshFind" class="w3-bar-item">
+			<div class="nsh-find-field">
+				<i class="fa fa-search"></i>
+				<input id="nshFindInput" type="text" autocomplete="off"
+					placeholder="Buscar clases, métodos y bloques (Ctrl+F)" />
+				<button type="button" id="nshFindClear" title="Limpiar"><i class="fa fa-times"></i></button>
+			</div>
+			<div id="nshFindResults" class="invisible"></div>
+		</div>
+
+		<div class="w3-bar-item">
+			<button type="button" id="importProjectBtn" title="Abrir un .nsplus (Ctrl+O)"
+				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-folder-open-o"></i></button>
+			<button type="button" id="exportProjectBtn" title="Guardar como .nsplus (Ctrl+S)"
+				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-floppy-o"></i></button>
+			<button type="button" id="exportPDFBtn" title="Exportar a PDF"
+				class="w3-btn w3-text-pink w3-light-grey w3-xlarge"><i class="fa fa-file-pdf-o"></i></button>
+			<button type="button" id="exitBtn" title="Salir"
+				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-sign-out"></i></button>
+
+			<input id="fileInput" type="file" accept=".nsplus" name="name" class="invisible" />
+		</div>
+
+		<div class="w3-bar-item nsh-viewswitch">
+			<button type="button" id="nshViewNS" class="nsh-view-btn nsh-view-on" title="Diagramas de Nassi-Shneiderman">
+				<i class="fa fa-sitemap"></i> NS
+			</button>
+			<button type="button" id="nshViewUml" class="nsh-view-btn" title="Diagrama de clases UML (Ctrl+Shift+U)">
+				<i class="fa fa-cubes"></i> UML
+			</button>
+		</div>
+
+		<div class="w3-bar-item nsh-toolgroup">
+			<button type="button" id="nshUndoBtn" class="nsh-iconbtn" title="Deshacer (Ctrl+Z)" disabled>
+				<i class="fa fa-undo"></i>
+			</button>
+			<button type="button" id="nshRedoBtn" class="nsh-iconbtn" title="Rehacer (Ctrl+Y)" disabled>
+				<i class="fa fa-repeat"></i>
+			</button>
+			<button type="button" id="nshChecksBtn" class="nsh-iconbtn" title="Mostrar siempre las casillas de selección (Ctrl+Shift+C)">
+				<i class="fa fa-check-square-o"></i>
+			</button>
+			<button type="button" id="nshHelpBtn" class="nsh-iconbtn" title="Atajos de teclado (F1)">
+				<i class="fa fa-keyboard-o"></i>
+			</button>
+		</div>
+
+		<div class="w3-dropdown-hover w3-bar-item w3-mobile">
+			<button class="w3-btn w3-light-grey w3-hover-white w3-text-dark-gray w3-large" title="Agregar parámetros y variables">
+				<i class="fa fa-pencil-square-o"></i> <i class="fa fa-caret-down"></i>
+			</button>
+			<div id="diagramButtons" class="w3-dropdown-content w3-light-grey w3-card-4 w3-mobile">
+				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newParameter">Parámetro</a>
+				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newInitializedConstant">Constante</a>
+				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newVariable">Variable</a>
+				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newInitializedVariable">Variable
+					inicializada</a>
+			</div>
+		</div>
+
+		<div class="w3-bar-item switcher-block">
+			<span class="w3-bar-item">Colorear </span>
+			<label class="switcher-button">
+				<input type="checkbox" id="checkColors" checked>
+				<span class="slider round"></span>
+			</label>
+		</div>
+
+		<div class="w3-bar-item">
+			<select id="nshThemeSelect" title="Tema de la aplicación"></select>
+		</div>
+	</header>
+
+	<button id="buttonOpenDiagrams" class="w3-btn w3-indigo panelButton">Clases<i class="fa fa-arrow-down"></i></button>
+	<button id="buttonOpenBlocks" class="w3-btn w3-indigo panelButton"><i class="fa fa-arrow-down"></i>Bloques</button>
+
+	<div id="main">
+		<div class="w3-sidebar w3-animate-left invisible" id="diagramsContainer">
+			<div class="controlButtons w3-center">
+				<div class="w3-bar">
+					<button id="newDiagram" class="w3-btn w3-white w3-large w3-text-teal" title="Nuevo método (Ctrl+N)">
+						<i class="fa fa-lg fa-plus-circle"></i>
+					</button>
+					<button id="newFolder" class="w3-btn w3-white w3-large w3-text-indigo" title="Nueva clase">
+						<i class="fa fa-lg fa-folder-o"></i>
+					</button>
+					<button id="viewAllDiagrams" class="hidden w3-btn w3-white w3-large w3-text-dark-gray">
+						<i class="fa fa-lg fa-eye"></i></button>
+					<button id="buttonCloseDiagrams" class="w3-btn w3-white w3-large w3-text-red" title="Cerrar el panel">
+						<i class="fa fa-lg fa-window-close"></i>
+					</button>
+				</div>
+			</div>
+			<div id="diagramsItemsContainer"></div>
+		</div>
+
+		<div id="menuContainer" class="w3-sidebar w3-animate-right invisible">
+			<div class="controlButtons w3-center">
+				<div class="w3-bar">
+					<button id="buttonCloseBlocks" class="w3-btn w3-white w3-large w3-text-red" title="Cerrar el panel">
+						<i class="fa fa-lg fa-window-close"></i>
+					</button>
+				</div>
+			</div>
+			<div id="nshMenuScroll"></div>
+		</div>
+
+		<section id="sectionDiagram" class="w3-animate-zoom initial-margin-left initial-margin-right">
+			<div id="nshTabs"></div>
+			<div id="nshCanvas">
+				<div id="actualDiagram"></div>
+			</div>
+			<i id="trash" droppable="true" class="invisible fa fa-trash" title="Soltá acá para eliminar"></i>
+			<div id="nshZoomBar">
+				<button type="button" id="nshZoomOut" title="Alejar (Ctrl+-)"><i class="fa fa-minus"></i></button>
+				<span id="nshZoomLevel">100%</span>
+				<button type="button" id="nshZoomIn" title="Acercar (Ctrl++)"><i class="fa fa-plus"></i></button>
+				<button type="button" id="nshZoomReset" title="Zoom 100% (Ctrl+0)"><i class="fa fa-dot-circle-o"></i></button>
+				<button type="button" id="nshZoomFit" title="Ajustar al ancho (Ctrl+9)"><i class="fa fa-arrows-h"></i></button>
+			</div>
+		</section>
+
+		<section id="umlSection" class="invisible initial-margin-left">
+			<div id="umlBar">
+				<button type="button" id="umlNuevaClase" class="uml-btn" title="Agregar una clase (C)"><i class="fa fa-plus-square-o"></i> Clase</button>
+				<button type="button" id="umlNuevaNota" class="uml-btn" title="Agregar una nota (N)"><i class="fa fa-sticky-note-o"></i> Nota</button>
+				<span class="uml-sep"></span>
+				<span id="umlRelTipos" class="uml-tipos"></span>
+				<button type="button" id="umlUnir" class="uml-btn" title="Relacionar dos clases: elegí primero la de origen y después la de destino (R)"><i class="fa fa-link"></i> Relacionar</button>
+				<button type="button" id="umlBorrar" class="uml-btn uml-feo" title="Eliminar la clase, la nota o la relación seleccionada (Supr)"><i class="fa fa-trash"></i> Eliminar</button>
+				<span class="uml-sep"></span>
+				<button type="button" id="umlSync" class="uml-btn uml-fuerte" title="Crea en el proyecto las clases y los métodos de este diagrama (Ctrl+G)">
+					<i class="fa fa-upload"></i> Cargar a diagrama NS
+				</button>
+				<button type="button" id="umlLeer" class="uml-btn" title="Dibuja el diagrama a partir de las clases y los métodos que ya tiene el proyecto">
+					<i class="fa fa-download"></i> Dibujar el diagrama NS
+				</button>
+				<span class="uml-zoom">
+					<button type="button" id="umlZoomOut" title="Alejar (Ctrl+-)"><i class="fa fa-minus"></i></button>
+					<span id="umlZoomLevel">100%</span>
+					<button type="button" id="umlZoomIn" title="Acercar (Ctrl++)"><i class="fa fa-plus"></i></button>
+					<button type="button" id="umlZoomReset" title="Zoom 100% (Ctrl+0)"><i class="fa fa-dot-circle-o"></i></button>
+					<button type="button" id="umlZoomFit" title="Ver todo el diagrama (Ctrl+9)"><i class="fa fa-arrows-alt"></i></button>
+				</span>
+			</div>
+			<div id="umlWrap">
+				<div id="umlScroll">
+					<div id="umlCanvas">
+						<svg id="umlSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+					</div>
+				</div>
+				<aside id="umlProps">
+					<div class="uml-props-head"><i class="fa fa-pencil"></i> <span id="umlQue">Nada elegido</span></div>
+					<textarea id="umlText" spellcheck="false" disabled
+						placeholder="Elegí una clase del diagrama para editarla acá, o agregá una con el botón Clase."></textarea>
+					<div class="uml-ayuda">
+						<b>Cómo se escribe una clase</b>
+						<pre>Persona
+--
+-nombre: String
+-edad: int
+--
++saludar(): void
++comparar(otra: Persona): int</pre>
+					</div>
+				</aside>
+			</div>
+		</section>
+	</div>
+
+	<footer id="footer" class="w3-indigo w3-bottom w3-row w3-padding-small">
+		<div class="professor w3-col s4 w3-center w3-cell w3-cell-middle">
+			<button type="button" id="nshCreditsBtn" class="nsh-footer-btn">
+				<i class="fa fa-sm fa-users"></i> Créditos
+			</button>
+		</div>
+		<div class="message w3-col s4 w3-center" id="historialBtn">Para todos desde ORT</div>
+		<div class="professor w3-col s4 w3-center w3-cell w3-cell-middle">
+			<span class="nsh-footer-note">NS Sharp · ORT Argentina</span>
+		</div>
+		<div id="hist-popup" class="w3-indigo hidden"></div>
+	</footer>
+
+	<div id="nshFileDrop" class="invisible">
+		<div class="nsh-filedrop-card">
+			<i class="fa fa-download"></i>
+			<p>Soltá el archivo <b>.nsplus</b> para abrirlo</p>
+		</div>
+	</div>
+
+	<div id="nshToasts"></div>
+
+	<div id="projectPrint" class="w3-container invisible">
+		<div class="PDFHeader">
+			<img src="img/ort-logo-original.png" class="w3-image w3-bar-item" id="ortLogoPDF" alt="Logo ORT" />
+			<img src="img/nsharp-logo-indigo.png" class="w3-image w3-bar-item" id="nsplusLogoPDF" alt="Logo NS Sharp" />
+			<h1 id="PDFTitle" class="w3-large w3-center"></h1>
+			<h2 id="PDFSubTitle" class="w3-small w3-center">
+				<span id="PDFAutor"></span> |
+				<span id="PDFComission"></span> |
+				<span id="PDFDate"></span> |
+				<span id="PDFMinutes"></span>
+			</h2>
+		</div>
+		<div id="projectPrintDiagrams"></div>
+	</div>
+
+	<script type="application/javascript" src="js/XNS-core/html2canvas.js"></script>
+	<script type="application/javascript" src="js/XNS-core/Enumeration.js"></script>
+	<script type="application/javascript" src="js/XNS-core/ClassConstructor.js"></script>
+	<script type="application/javascript" src="js/XNS-core/BaseDiagram.js"></script>
+	<script type="application/javascript" src="js/XNS-core/DiagramObject.js"></script>
+	<script type="application/javascript" src="js/XNS-core/XNSDiagramMaker.js"></script>
+
+	<script type="application/javascript" src="js/NSharp/NSHCore.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHTheme.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHFolders.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHDiagramUtils.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHHistory.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHSelection.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHMenu.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHDrag.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHTabs.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHSearch.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHViewport.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHShortcuts.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHCredits.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHFileDrop.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHUml.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHBoot.js"></script>
+
+	<script type="application/javascript" src="js/XNS-editor/templates.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPUtils.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/utils.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPPDF.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPFile.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/DiagramContainer.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/DiagramsMenu.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/buttonsHandlers.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/buttons.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/StatementsMenu.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPDiagram.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPProject.js"></script>
+	<script type="application/javascript" src="js/XNS-editor/NSPEditor.js"></script>
+</body>
+
+</html>
