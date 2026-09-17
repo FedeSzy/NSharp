@@ -26,6 +26,7 @@ var atajos = (function () {
 	];
 
 	var AYUDA_UML = [
+		["Deshacer / Rehacer", "Ctrl+Z  /  Ctrl+Y"],
 		["Nueva clase / Nueva nota", "C  /  N"],
 		["Activar el modo relacionar", "R"],
 		["Elegir el tipo de flecha", "1  a  7"],

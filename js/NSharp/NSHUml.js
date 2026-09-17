@@ -6,7 +6,7 @@ var uml = (function () {
 	var GRILLA = 10;
 	var TXT_CLASE = "LaClase\n--\n-elAtributo: int\n--\n+elMetodo(): void";
 	var TXT_NOTA = "Escribí acá tu aclaración";
-	var TXT_LINEA = "Cardinalidad\n--> 0..n\n<--0..n";
+	var TXT_LINEA = "Cardinalidad\n--> 0..n\n<-- 0..n";
 	var INSET_ROTULO = 20;
 
 	var VINCULOS = [
@@ -37,6 +37,12 @@ var uml = (function () {
 	var pellizco = null;
 	var ultimoToque = { id: null, t: 0 };
 
+	var TOPE_HIST = 120;
+	var pasado = [];
+	var futuro = [];
+	var ultimaFoto = null;
+	var tictac = null;
+
 	function lienzoUml() { return document.getElementById("umlCanvas"); }
 
 	function plano() { return document.getElementById("umlScroll"); }
@@ -60,6 +66,89 @@ var uml = (function () {
 	function lineaPorId(id) {
 		for (var i = 0; i < relaciones.length; i++) { if (relaciones[i].id === id) { return relaciones[i]; } }
 		return null;
+	}
+
+	// --- Deshacer y rehacer del diagrama UML -------------------------------
+	// Guardamos el diagrama entero como texto: son pocos elementos y así no hay
+	// que llevar la cuenta de qué cambió en cada acción.
+
+	function foto() {
+		return JSON.stringify({ c: elementos, l: relaciones, m: memoria });
+	}
+
+	function botonesHistoria() {
+		if (!vista) { return; }
+		var a = document.getElementById("nshUndoBtn");
+		var b = document.getElementById("nshRedoBtn");
+		if (a) { a.disabled = !pasado.length; }
+		if (b) { b.disabled = !futuro.length; }
+	}
+
+	function anotar() {
+		var h = foto();
+		if (ultimaFoto === null) { ultimaFoto = h; botonesHistoria(); return; }
+		if (h === ultimaFoto) { return; }
+		pasado.push(ultimaFoto);
+		if (pasado.length > TOPE_HIST) { pasado.shift(); }
+		futuro.length = 0;
+		ultimaFoto = h;
+		botonesHistoria();
+	}
+
+	// Para lo que llega de a poquito (escribir en el panel, mover con las
+	// flechas) esperamos un rato y lo anotamos todo junto.
+	function anotarLuego() {
+		if (tictac) { window.clearTimeout(tictac); }
+		tictac = window.setTimeout(function () { tictac = null; anotar(); }, 450);
+	}
+
+	function anotarYa() {
+		if (tictac) { window.clearTimeout(tictac); tictac = null; }
+		anotar();
+	}
+
+	function olvidarHistoria() {
+		if (tictac) { window.clearTimeout(tictac); tictac = null; }
+		pasado.length = 0;
+		futuro.length = 0;
+		ultimaFoto = foto();
+		botonesHistoria();
+	}
+
+	function reponer(h) {
+		var d = JSON.parse(h);
+		elementos = d.c || [];
+		relaciones = d.l || [];
+		memoria = d.m || [];
+		if (elegido && !porId(elegido) && !lineaPorId(elegido)) { elegido = null; }
+		desde = null;
+		uniendo = false;
+		util.marcarCambios();
+		pintar();
+		ultimaFoto = foto();
+		botonesHistoria();
+	}
+
+	function deshacer() {
+		anotarYa();
+		if (!pasado.length) {
+			util.aviso("No hay cambios para deshacer en el diagrama UML");
+			return false;
+		}
+		futuro.push(ultimaFoto);
+		reponer(pasado.pop());
+		return true;
+	}
+
+	function rehacer() {
+		anotarYa();
+		if (!futuro.length) {
+			util.aviso("No hay cambios para rehacer en el diagrama UML");
+			return false;
+		}
+		pasado.push(ultimaFoto);
+		reponer(futuro.pop());
+		return true;
 	}
 
 	function tramos(txt) {
@@ -159,6 +248,7 @@ var uml = (function () {
 		elegido = c.id;
 		util.marcarCambios();
 		pintar();
+		anotarYa();
 		var t = panel();
 		if (t) { t.focus(); t.select(); }
 		return c;
@@ -178,6 +268,7 @@ var uml = (function () {
 		elegido = copia.id;
 		util.marcarCambios();
 		pintar();
+		anotarYa();
 		verElegido();
 		return true;
 	}
@@ -189,6 +280,7 @@ var uml = (function () {
 		c.y = Math.max(0, c.y + dy);
 		util.marcarCambios();
 		pintar();
+		anotarLuego();
 		verElegido();
 		return true;
 	}
@@ -230,6 +322,7 @@ var uml = (function () {
 		elegido = null;
 		util.marcarCambios();
 		pintar();
+		anotarYa();
 	}
 
 	function marco(c) { return { cx: c.x + c.w / 2, cy: c.y + c.h / 2, w: c.w, h: c.h }; }
@@ -309,8 +402,10 @@ var uml = (function () {
 	function elegirTipo(t) {
 		tipoNuevo = t;
 		var l = elegido ? lineaPorId(elegido) : null;
-		if (l && l.t !== t) { l.t = t; util.marcarCambios(); }
+		var cambio = !!(l && l.t !== t);
+		if (cambio) { l.t = t; util.marcarCambios(); }
 		pintar();
+		if (cambio) { anotarYa(); }
 	}
 
 	function tocarUnion() {
@@ -521,13 +616,15 @@ var uml = (function () {
 
 		if (uniendo) {
 			if (!desde) { desde = c.id; pintar(); return; }
-			if (desde !== c.id) {
+			var nueveRel = desde !== c.id;
+			if (nueveRel) {
 				relaciones.push({ id: util.nuevoId("r"), de: desde, a: c.id, t: tipoNuevo, txt: TXT_LINEA });
 				util.marcarCambios();
 			}
 			desde = null;
 			uniendo = false;
 			pintar();
+			if (nueveRel) { anotarYa(); }
 			return;
 		}
 
@@ -586,9 +683,11 @@ var uml = (function () {
 		window.removeEventListener("pointermove", alMover, true);
 		window.removeEventListener("pointerup", alSoltar, true);
 		window.removeEventListener("pointercancel", alSoltar, true);
-		if (arrastreActual) { util.marcarCambios(); }
+		var hubo = !!arrastreActual;
+		if (hubo) { util.marcarCambios(); }
 		arrastreActual = null;
 		pintar();
+		if (hubo) { anotarYa(); }
 	}
 
 	function metPorNombre(carpeta, nombre) {
@@ -743,6 +842,7 @@ var uml = (function () {
 			};
 		});
 
+		anotarYa();
 		metodos.reordenar();
 		if (!lienzo.actualDiagram && nuevos.length) {
 			lienzo.setDiagram(nuevos[0]);
@@ -825,6 +925,7 @@ var uml = (function () {
 		elegido = null;
 		util.marcarCambios();
 		pintar();
+		anotarYa();
 		util.aviso(carpetas.length === 1
 			? "Se dibujó 1 clase a partir del proyecto"
 			: "Se dibujaron " + carpetas.length + " clases a partir del proyecto");
@@ -848,6 +949,10 @@ var uml = (function () {
 			pellizco = null;
 		}
 		if (vista) { pintar(); }
+		// Los botones de deshacer del encabezado son los mismos para las dos
+		// vistas, así que al cambiar hay que mostrar el estado de la que queda.
+		if (vista) { botonesHistoria(); }
+		else if (typeof historial !== "undefined") { historial.pintarBotones(); }
 		acomodarPantalla();
 	}
 
@@ -1032,6 +1137,7 @@ var uml = (function () {
 		mostrar(true);
 		ajustar();
 		pintar();
+		anotarYa();
 		util.marcarCambios();
 		util.aviso("Se abrió " + (nombre || "el diagrama") + ": " +
 			d.cosas.length + (d.cosas.length === 1 ? " elemento" : " elementos") + " y " +
@@ -1070,8 +1176,21 @@ var uml = (function () {
 				else { return; }
 				util.marcarCambios();
 				pintar();
+				anotarLuego();
 			});
+			t.addEventListener("blur", function () { anotarYa(); });
 			t.addEventListener("keydown", function (e) {
+				var ctrl = e.ctrlKey || e.metaKey;
+				var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+				// El navegador no puede deshacer en este cuadro porque el texto lo
+				// escribimos nosotros al pintar, así que acá también usamos el
+				// historial del diagrama: cada tanda de tecleo es un paso.
+				if (ctrl && (k === "z" || k === "y")) {
+					e.preventDefault();
+					e.stopPropagation();
+					if (k === "y" || e.shiftKey) { rehacer(); } else { deshacer(); }
+					return;
+				}
 				e.stopPropagation();
 				if (e.key === "Escape") { t.blur(); }
 			});
@@ -1131,6 +1250,7 @@ var uml = (function () {
 
 		zoom(1);
 		pintar();
+		olvidarHistoria();
 	}
 
 	function alTeclaUml(e) {
@@ -1145,6 +1265,8 @@ var uml = (function () {
 		if (k === "Escape") { uniendo = false; desde = null; elegir(null); return; }
 
 		if (ctrl) {
+			if (k === "z" && !e.shiftKey) { e.preventDefault(); deshacer(); return; }
+			if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); rehacer(); return; }
 			if (k === "d") { e.preventDefault(); duplicar(); return; }
 			if (k === "g") { e.preventDefault(); sincronizar(); return; }
 			if (k === "0") { e.preventDefault(); zoomCentro(1); return; }
@@ -1179,6 +1301,10 @@ var uml = (function () {
 	o.mostrar = mostrar;
 	o.tocarVista = function () { mostrar(!vista); };
 	o.sincronizar = sincronizar;
+	o.deshacer = deshacer;
+	o.rehacer = rehacer;
+	o.hayAtras = function () { return !!pasado.length; };
+	o.hayAdelante = function () { return !!futuro.length; };
 	o.exportarUxf = bajarUxf;
 	o.esUxf = function (nombre) { return /\.(uxf|uxl)$/i.test(nombre || ""); };
 	o.abrirArchivo = function (f) {
@@ -1194,12 +1320,23 @@ var uml = (function () {
 
 	o.cargar = function (d) {
 		elementos = (d && d.cosas instanceof Array) ? d.cosas : [];
-		relaciones = (d && d.lineas instanceof Array) ? d.lineas : [];
+		relaciones = ((d && d.lineas instanceof Array) ? d.lineas : [])
+			.map(function (l) {
+				return {
+					id: l.id || util.nuevoId("r"),
+					de: l.de,
+					a: l.a,
+					t: nombreVinculo(l.t) === "Relación" ? "aso" : l.t,
+					txt: typeof l.txt === "string" ? l.txt : ""
+				};
+			})
+			.filter(function (l) { return porId(l.de) && porId(l.a); });
 		memoria = (d && d.mem instanceof Array) ? d.mem : [];
 		elegido = null;
 		desde = null;
 		uniendo = false;
 		if (vista) { pintar(); }
+		olvidarHistoria();
 	};
 
 	return o;

@@ -94,8 +94,9 @@ var arranque = (function () {
 	function botones() {
 		var a = document.getElementById("nshUndoBtn");
 		var b = document.getElementById("nshRedoBtn");
-		if (a) { a.addEventListener("click", function () { historial.atras(); }); }
-		if (b) { b.addEventListener("click", function () { historial.adelante(); }); }
+		var enUml = function () { return typeof uml !== "undefined" && uml.activo(); };
+		if (a) { a.addEventListener("click", function () { if (enUml()) { uml.deshacer(); } else { historial.atras(); } }); }
+		if (b) { b.addEventListener("click", function () { if (enUml()) { uml.rehacer(); } else { historial.adelante(); } }); }
 		var c = document.getElementById("nshChecksBtn");
 		if (c) {
 			c.addEventListener("click", function () {

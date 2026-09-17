@@ -30,7 +30,6 @@ function hacerArrastrable(obj) {
 }
 
 function antesDeAbrir() {
-	document.getElementById("inputProjectName").value = proy.name;
 	util.actualizarTitulo();
 	arbol.vaciarArbol();
 	historial.limpiarTodo();
@@ -221,11 +220,6 @@ function iniciar() {
 		arbol = new Arbol();
 		paleta = new Paleta();
 		pdf = new Pdf();
-		enganchar(document.getElementById("inputProjectName"), "change", function () {
-			proy.name = this.value;
-			util.actualizarTitulo();
-			util.marcarCambios();
-		});
 		iniciarBotones(proy);
 		agregarMetodo(lienzo.actualDiagram);
 		medirCampos();

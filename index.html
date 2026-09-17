@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>NS Sharp</title>
+	<title>NS Sharp - Editor de diagramas de Nassi-Shneiderman</title>
 	<meta name="description"
 		content="NS Sharp es un editor online de diagramas de Nassi-Shneiderman extendidos (XNSD) para aprender a programar. Armá diagramas arrastrando bloques, organizalos en clases y métodos, y guardalos en formato .nsplus. Evolución de NS Plus, compatible con sus archivos." />
 	<meta name="author" content="Federico Szymsiowicz" />
@@ -62,9 +62,6 @@
 	<header id="header" class="w3-bar w3-indigo w3-top">
 		<img src="img/ort-logo-blanco.png" class="w3-image w3-bar-item" id="ortLogo" alt="Logo ORT" />
 		<img src="img/nsharp-logo-white.png" class="w3-image w3-bar-item" id="nsplusLogo" alt="Logo NS Sharp" />
-
-		<input id="inputProjectName" type="text" class="w3-bar-item w3-light-grey w3-input"
-			placeholder="Proyecto sin título">
 
 		<div id="nshFind" class="w3-bar-item">
 			<div class="nsh-find-field">
@@ -222,20 +219,23 @@
 					title="Descargar este diagrama como .uxf para abrirlo en UMLet / UMLetino">
 					<i class="fa fa-floppy-o"></i> Guardar .uxf
 				</button>
-				<span class="uml-zoom">
-					<button type="button" id="umlZoomOut" title="Alejar (Ctrl+-)"><i class="fa fa-minus"></i></button>
-					<span id="umlZoomLevel">100%</span>
-					<button type="button" id="umlZoomIn" title="Acercar (Ctrl++)"><i class="fa fa-plus"></i></button>
-					<button type="button" id="umlZoomReset" title="Zoom 100% (Ctrl+0)"><i
-							class="fa fa-dot-circle-o"></i></button>
-					<button type="button" id="umlZoomFit" title="Ver todo el diagrama (Ctrl+9)"><i
-							class="fa fa-arrows-alt"></i></button>
-				</span>
 			</div>
 			<div id="umlWrap">
-				<div id="umlScroll">
-					<div id="umlCanvas">
-						<svg id="umlSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+				<div id="umlLienzo">
+					<div id="umlScroll">
+						<div id="umlCanvas">
+							<svg id="umlSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+						</div>
+					</div>
+					<div id="umlZoomBar">
+						<button type="button" id="umlZoomOut" title="Alejar (Ctrl+-)"><i
+								class="fa fa-minus"></i></button>
+						<span id="umlZoomLevel">100%</span>
+						<button type="button" id="umlZoomIn" title="Acercar (Ctrl++)"><i class="fa fa-plus"></i></button>
+						<button type="button" id="umlZoomReset" title="Zoom 100% (Ctrl+0)"><i
+								class="fa fa-dot-circle-o"></i></button>
+						<button type="button" id="umlZoomFit" title="Ver todo el diagrama (Ctrl+9)"><i
+								class="fa fa-arrows-alt"></i></button>
 					</div>
 				</div>
 				<aside id="umlProps">
@@ -256,7 +256,7 @@
 						<b>Cómo se escribe una línea</b>
 						<pre>Cardinalidad
 --> 0..n
-<--0..n</pre>
+<-- 0..n</pre>
 					</div>
 				</aside>
 			</div>

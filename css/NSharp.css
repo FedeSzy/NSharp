@@ -44,21 +44,6 @@
 	height: auto;
 }
 
-#inputProjectName {
-	border-radius: 8px;
-	min-width: 150px;
-	max-width: 260px;
-	padding: 6px 10px !important;
-	border: 1px solid transparent;
-	transition: border-color .15s ease, background-color .15s ease;
-}
-
-#inputProjectName:focus {
-	outline: none;
-	border-color: var(--nsh-accent);
-	background-color: var(--nsh-surface) !important;
-}
-
 #header .w3-btn,
 #header .w3-button {
 	border-radius: 8px;
@@ -1098,7 +1083,8 @@ body.nsh-panning * {
 	user-select: none !important;
 }
 
-#nshZoomBar {
+#nshZoomBar,
+#umlZoomBar {
 	position: absolute;
 	bottom: 16px;
 	left: 50%;
@@ -1116,11 +1102,13 @@ body.nsh-panning * {
 	transition: opacity .18s ease;
 }
 
-#nshZoomBar:hover {
+#nshZoomBar:hover,
+#umlZoomBar:hover {
 	opacity: 1;
 }
 
-#nshZoomBar button {
+#nshZoomBar button,
+#umlZoomBar button {
 	border: none;
 	background: transparent;
 	color: var(--nsh-text);
@@ -1131,11 +1119,13 @@ body.nsh-panning * {
 	font-size: 13px;
 }
 
-#nshZoomBar button:hover {
+#nshZoomBar button:hover,
+#umlZoomBar button:hover {
 	background: var(--nsh-surface-3);
 }
 
-#nshZoomLevel {
+#nshZoomLevel,
+#umlZoomLevel {
 	min-width: 48px;
 	font-size: 12px;
 	font-variant-numeric: tabular-nums;

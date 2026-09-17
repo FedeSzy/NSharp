@@ -41,6 +41,34 @@ var uxf = (function () {
 		return { x: r.cx + dx * s, y: r.cy + dy * s };
 	}
 
+	// El texto de una relación se escribe como en el panel del editor: la primera
+	// línea es el rótulo, "--> algo" es el extremo de destino y "<-- algo" el de
+	// origen. Acá se parte en esas tres piezas para poder pasarlas a UMLet.
+	function partesTexto(txt) {
+		var renglones = String(txt == null ? "" : txt).split(/\r?\n/);
+		var rotulo = renglones.length ? [renglones[0]] : [];
+		var ini = "", fin = "";
+		renglones.slice(1).forEach(function (l) {
+			var s = l.trim();
+			if (!s) { return; }
+			if (/^-->/.test(s)) { fin = s.replace(/^-->\s*/, ""); }
+			else if (/^<--/.test(s)) { ini = s.replace(/^<--\s*/, ""); }
+			else { rotulo.push(s); }
+		});
+		while (rotulo.length && !rotulo[rotulo.length - 1].trim()) { rotulo.pop(); }
+		return { rotulo: rotulo.join("\n"), ini: ini, fin: fin };
+	}
+
+	// m1 es el extremo donde arranca la línea (el origen) y m2 donde termina.
+	function panelDeRelacion(l) {
+		var p = partesTexto(l.txt);
+		var t = LT[l.t] || LT.aso;
+		if (p.rotulo) { t += "\n" + p.rotulo; }
+		if (p.ini) { t += "\nm1=" + p.ini; }
+		if (p.fin) { t += "\nm2=" + p.fin; }
+		return t;
+	}
+
 	function bloque(id, x, y, w, h, panel, extra) {
 		return "  <element>\n" +
 			"    <id>" + id + "</id>\n" +
@@ -71,7 +99,7 @@ var uxf = (function () {
 			var p2 = borde(marco(b), a.x + a.w / 2, a.y + a.h / 2);
 			var x = Math.min(p1.x, p2.x) - 10;
 			var y = Math.min(p1.y, p2.y) - 10;
-			var panel = (LT[l.t] || LT.aso) + (l.txt ? "\n" + l.txt : "");
+			var panel = panelDeRelacion(l);
 			var puntos = un(p1.x - x) + ";" + un(p1.y - y) + ";" + un(p2.x - x) + ";" + un(p2.y - y);
 			t += bloque("Relation", x, y,
 				Math.abs(p2.x - p1.x) + 20, Math.abs(p2.y - p1.y) + 20, panel, puntos);
@@ -96,6 +124,34 @@ var uxf = (function () {
 		while (lineas.length && !lineas[lineas.length - 1].trim()) { lineas.pop(); }
 		while (lineas.length && !lineas[0].trim()) { lineas.shift(); }
 		return lineas.join("\n");
+	}
+
+	function atributo(panel, clave) {
+		var v = "";
+		var re = new RegExp("^\\s*" + clave + "\\s*=\\s*(.*)$", "i");
+		String(panel || "").split(/\r?\n/).forEach(function (l) {
+			var m = l.match(re);
+			if (m) { v = m[1].trim(); }
+		});
+		return v;
+	}
+
+	// UMLet guarda cardinalidad (m), rol (r) y calificador (q) de cada extremo.
+	function extremo(panel, n) {
+		return ["m" + n, "r" + n, "q" + n].map(function (k) {
+			return atributo(panel, k);
+		}).filter(function (s) { return s; }).join(" ");
+	}
+
+	// Rearma el texto que espera el editor a partir del panel de UMLet.
+	function textoDeRelacion(panel, invertir) {
+		var cuerpo = textoLimpio(panel);
+		var ini = extremo(panel, invertir ? 2 : 1);
+		var fin = extremo(panel, invertir ? 1 : 2);
+		var ls = cuerpo ? cuerpo.split(/\r?\n/) : [];
+		if (fin) { ls.push("--> " + fin); }
+		if (ini) { ls.push("<-- " + ini); }
+		return ls.join("\n");
 	}
 
 	function valorLt(panel) {
@@ -197,7 +253,7 @@ var uxf = (function () {
 				de: (q.invertir ? b : a).id,
 				a: (q.invertir ? a : b).id,
 				t: q.t,
-				txt: textoLimpio(r.panel).split(/\r?\n/)[0] || ""
+				txt: textoDeRelacion(r.panel, q.invertir)
 			});
 		});
 

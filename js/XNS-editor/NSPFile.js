@@ -14,17 +14,43 @@ function abrirProyecto() {
 	input.click();
 }
 
+var SIN_NOMBRE = "Proyecto sin título";
+
+function tieneNombre() {
+	var n = (proy && proy.name) ? String(proy.name).trim() : "";
+	return !!n && n !== SIN_NOMBRE;
+}
+
+// El nombre se pide recién al guardar, y una sola vez por proyecto.
+function pedirNombre() {
+	var n = prompt("Nombre del proyecto:", "");
+	if (n === null) { return false; }
+	n = n.trim();
+	if (!n) {
+		util.aviso("Es necesario un nombre para guardar el proyecto");
+		return false;
+	}
+	proy.name = n;
+	util.actualizarTitulo();
+	return true;
+}
+
+function nombreDeArchivo() {
+	return String(proy.fullname).replace(/[\\/:*?"<>|]/g, "-");
+}
+
 function guardarProyecto() {
+	if (!tieneNombre() && !pedirNombre()) { return; }
 	var obj = proy.getForExport(true, actualizarDiagrama);
 	var a = document.createElement('a');
 	a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(obj)));
-	a.setAttribute('download', proy.fullname + ".nsplus");
+	a.setAttribute('download', nombreDeArchivo() + ".nsplus");
 	a.style.display = 'none';
 	document.body.appendChild(a);
 	a.click();
 	document.body.removeChild(a);
 	util.marcarGuardado();
-	util.aviso("Se guardó el archivo " + proy.fullname + ".nsplus");
+	util.aviso("Se guardó el archivo " + nombreDeArchivo() + ".nsplus");
 }
 
 function pdfAlumno() {
