@@ -1,10 +1,7 @@
 var uxf = (function () {
 	var o = {};
 
-	// Cómo se escribe cada relación nuestra en el formato de UMLet / UMLetino.
-	// En UMLet los símbolos se escriben con "<" del lado de origen y ">" del lado
-	// de destino: 1 = flecha, 2 = triángulo hueco, 4 = rombo hueco, 5 = rombo lleno.
-	// El "." en el medio hace que la línea sea punteada.
+
 	var LT = {
 		aso: "lt=-",
 		dir: "lt=->",
@@ -15,7 +12,6 @@ var uxf = (function () {
 		dep: "lt=.>"
 	};
 
-	// Líneas de estilo de UMLet que no son parte del texto de la clase.
 	var ESTILO = /^\s*(lt|bg|fg|lw|group|layer|fontsize|halign|valign|transparency|style|elementstyle|customelement|type|m1|m2|r1|r2|q1|q2)\s*=/i;
 
 	var CERCA = 40;

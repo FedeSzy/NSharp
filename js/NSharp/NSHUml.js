@@ -6,6 +6,8 @@ var uml = (function () {
 	var GRILLA = 10;
 	var TXT_CLASE = "LaClase\n--\n-elAtributo: int\n--\n+elMetodo(): void";
 	var TXT_NOTA = "Escribí acá tu aclaración";
+	var TXT_LINEA = "Cardinalidad\n--> 0..n\n<--0..n";
+	var INSET_ROTULO = 20;
 
 	var VINCULOS = [
 		{ id: "aso", nombre: "Asociación" },
@@ -382,12 +384,45 @@ var uml = (function () {
 			s.appendChild(golpe);
 
 			if (l.txt) {
-				var t = nodo("text", {
-					x: (d1.x + d2.x) / 2, y: (d1.y + d2.y) / 2 - 6,
-					"text-anchor": "middle", "class": "uml-rotulo"
+				var renglones = l.txt.split(/\r?\n/);
+				var arriba = renglones[0] || "";
+				var centro = [], izq = "", der = "";
+				renglones.slice(1).forEach(function (r) {
+					var s2 = r.trim();
+					if (!s2) { return; }
+					if (/^-->/.test(s2)) { der = s2.replace(/^-->\s*/, ""); }
+					else if (/^<--/.test(s2)) { izq = s2.replace(/^<--\s*/, ""); }
+					else { centro.push(s2); }
 				});
-				t.textContent = l.txt;
-				s.appendChild(t);
+
+				var mx = (d1.x + d2.x) / 2, my = (d1.y + d2.y) / 2;
+
+				if (arriba) {
+					var tA = nodo("text", { x: mx, y: my - 6, "text-anchor": "middle", "class": "uml-rotulo" });
+					tA.textContent = arriba;
+					s.appendChild(tA);
+				}
+				if (centro.length) {
+					var tC = nodo("text", { x: mx, y: my + 14, "text-anchor": "middle", "class": "uml-rotulo" });
+					tC.textContent = centro.join(" ");
+					s.appendChild(tC);
+				}
+				if (izq) {
+					var haciaDer = d2.x >= d1.x;
+					var xIzq = d1.x + (haciaDer ? INSET_ROTULO : -INSET_ROTULO);
+					var ancIzq = haciaDer ? "start" : "end";
+					var tI = nodo("text", { x: xIzq, y: d1.y + 14, "text-anchor": ancIzq, "class": "uml-rotulo" });
+					tI.textContent = izq;
+					s.appendChild(tI);
+				}
+				if (der) {
+					var haciaIzq = d2.x >= d1.x;
+					var xDer = d2.x - (haciaIzq ? INSET_ROTULO : -INSET_ROTULO);
+					var ancDer = haciaIzq ? "end" : "start";
+					var tD = nodo("text", { x: xDer, y: d2.y + 14, "text-anchor": ancDer, "class": "uml-rotulo" });
+					tD.textContent = der;
+					s.appendChild(tD);
+				}
 			}
 		});
 	}
@@ -487,7 +522,7 @@ var uml = (function () {
 		if (uniendo) {
 			if (!desde) { desde = c.id; pintar(); return; }
 			if (desde !== c.id) {
-				relaciones.push({ id: util.nuevoId("r"), de: desde, a: c.id, t: tipoNuevo, txt: "" });
+				relaciones.push({ id: util.nuevoId("r"), de: desde, a: c.id, t: tipoNuevo, txt: TXT_LINEA });
 				util.marcarCambios();
 			}
 			desde = null;
