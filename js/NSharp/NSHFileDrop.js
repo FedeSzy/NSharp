@@ -16,14 +16,18 @@ var archivos = (function () {
 
 	function elegir(files) {
 		return Array.prototype.filter.call(files || [], function (f) {
-			return /\.nsplus$/i.test(f.name);
+			return /\.(nsplus|uxf|uxl)$/i.test(f.name);
 		})[0] || null;
 	}
 
 	function abrirSoltado(files) {
 		var f = elegir(files);
 		if (!f) {
-			util.aviso("Solo se pueden abrir archivos .nsplus o .uxl");
+			util.aviso("Solo se pueden abrir archivos .nsplus o .uxf");
+			return;
+		}
+		if (uml.esUxf(f.name)) {
+			uml.abrirArchivo(f);
 			return;
 		}
 		if (util.hayCambios() && !confirm('Hay cambios sin guardar.\n¿Abrir "' + f.name + '" igual?')) { return; }

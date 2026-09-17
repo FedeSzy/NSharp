@@ -76,7 +76,7 @@
 		</div>
 
 		<div class="w3-bar-item">
-			<button type="button" id="importProjectBtn" title="Abrir un .nsplus (Ctrl+O)"
+			<button type="button" id="importProjectBtn" title="Abrir un .nsplus o un .uxf de UMLet (Ctrl+O)"
 				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-folder-open-o"></i></button>
 			<button type="button" id="exportProjectBtn" title="Guardar como .nsplus (Ctrl+S)"
 				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-floppy-o"></i></button>
@@ -85,7 +85,7 @@
 			<button type="button" id="exitBtn" title="Salir"
 				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge" style="display:none;"><i class="fa fa-sign-out"></i></button>
 
-			<input id="fileInput" type="file" accept=".nsplus" name="name" class="invisible" />
+			<input id="fileInput" type="file" accept=".nsplus,.uxf,.uxl" name="name" class="invisible" />
 		</div>
 
 		<div class="w3-bar-item nsh-viewswitch">
@@ -202,6 +202,10 @@
 				<button type="button" id="umlLeer" class="uml-btn" title="Dibuja el diagrama a partir de las clases y los métodos que ya tiene el proyecto">
 					<i class="fa fa-download"></i> Dibujar el diagrama NS
 				</button>
+				<span class="uml-sep"></span>
+				<button type="button" id="umlGuardarUxf" class="uml-btn" title="Descargar este diagrama como .uxf para abrirlo en UMLet / UMLetino">
+					<i class="fa fa-floppy-o"></i> Guardar .uxf
+				</button>
 				<span class="uml-zoom">
 					<button type="button" id="umlZoomOut" title="Alejar (Ctrl+-)"><i class="fa fa-minus"></i></button>
 					<span id="umlZoomLevel">100%</span>
@@ -251,7 +255,7 @@
 	<div id="nshFileDrop" class="invisible">
 		<div class="nsh-filedrop-card">
 			<i class="fa fa-download"></i>
-			<p>Soltá el archivo <b>.nsplus</b> para abrirlo</p>
+			<p>Soltá el archivo <b>.nsplus</b> o <b>.uxf</b> para abrirlo</p>
 		</div>
 	</div>
 
@@ -293,6 +297,7 @@
 	<script type="application/javascript" src="js/NSharp/NSHShortcuts.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHCredits.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHFileDrop.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHUxf.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHUml.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHBoot.js"></script>
 

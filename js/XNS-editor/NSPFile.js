@@ -2,10 +2,15 @@ function abrirProyecto() {
 	var input = document.getElementById('fileInput');
 	input.onchange = e => {
 		var f = e.target.files[0];
-		if (f) {
-			leerArchivo(f);
+		input.value = '';
+		if (!f) { return; }
+		if (typeof uml != "undefined" && uml.esUxf(f.name)) {
+			uml.abrirArchivo(f);
+			return;
 		}
+		leerArchivo(f);
 	}
+	input.value = '';
 	input.click();
 }
 

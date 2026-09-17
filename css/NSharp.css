@@ -76,6 +76,29 @@
 
 #header .w3-dropdown-hover {
 	background-color: transparent !important;
+	position: relative;
+}
+
+/* El menú de parámetros y variables se despliega hacia abajo, en una sola columna.
+   Va fijo porque el encabezado recorta lo que se sale de su alto. */
+#diagramButtons {
+	position: fixed;
+	min-width: 200px;
+	padding: 4px;
+	box-shadow: var(--nsh-shadow);
+	z-index: 40;
+}
+
+#diagramButtons.nsh-abierto {
+	display: block;
+}
+
+#diagramButtons a {
+	display: block;
+	width: 100%;
+	text-align: left;
+	white-space: nowrap;
+	border-radius: 6px;
 }
 
 #exportProjectBtn {

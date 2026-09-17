@@ -33,6 +33,7 @@ var uml = (function () {
 	var espacio = false;
 	var dedos = {};
 	var pellizco = null;
+	var ultimoToque = { id: null, t: 0 };
 
 	function lienzoUml() { return document.getElementById("umlCanvas"); }
 
@@ -495,6 +496,19 @@ var uml = (function () {
 			return;
 		}
 
+		var ahora = Date.now();
+		var doble = ultimoToque.id === c.id && (ahora - ultimoToque.t) < 400;
+		ultimoToque = { id: c.id, t: ahora };
+		if (doble) {
+			e.preventDefault();
+			ultimoToque = { id: null, t: 0 };
+			elegido = c.id;
+			if (duplicar()) {
+				util.aviso(c.k === "nota" ? "Se duplicó la nota" : "Se duplicó la clase");
+			}
+			return;
+		}
+
 		elegir(c.id);
 		var p = puntoEnTela(e);
 		arrastreActual = {
@@ -514,6 +528,7 @@ var uml = (function () {
 		var p = puntoEnTela(e);
 		var dx = p.x - arrastreActual.x0, dy = p.y - arrastreActual.y0;
 		var c = arrastreActual.c;
+		if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { ultimoToque = { id: null, t: 0 }; }
 		if (arrastreActual.modo === "redimensionar") {
 			c.w = Math.max(90, Math.round((arrastreActual.aw + dx) / GRILLA) * GRILLA);
 			c.h = Math.max(50, Math.round((arrastreActual.ah + dy) / GRILLA) * GRILLA);
@@ -933,6 +948,63 @@ var uml = (function () {
 		document.body.classList.toggle("nsh-uml-pan", si && vista);
 	}
 
+	function nombreUxf() {
+		var n = "";
+		if (typeof proy !== "undefined" && proy) { n = proy.fullname || proy.name || ""; }
+		return (String(n).trim() || "diagrama-uml") + ".uxf";
+	}
+
+	function bajarUxf() {
+		if (!elementos.length) {
+			util.aviso("Agregá al menos una clase o una nota antes de exportar");
+			return;
+		}
+		var nombre = nombreUxf();
+		var bolsa = new Blob([uxf.generar(elementos, relaciones)], { type: "application/xml;charset=utf-8" });
+		var url = URL.createObjectURL(bolsa);
+		var a = document.createElement("a");
+		a.href = url;
+		a.download = nombre;
+		a.style.display = "none";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+		util.aviso("Se guardó el archivo " + nombre);
+	}
+
+	function abrirUxf(texto, nombre) {
+		var d;
+		try {
+			d = uxf.leer(texto);
+		} catch (e) {
+			alert('No se pudo abrir "' + (nombre || "el archivo") + '".\n' +
+				"Revisá que sea un .uxf de UMLet o UMLetino.\n\nDetalle: " +
+				(e && e.message ? e.message : e));
+			return false;
+		}
+		if ((elementos.length || relaciones.length) &&
+			!confirm('Se va a reemplazar el diagrama UML actual por el contenido de "' +
+				(nombre || "el archivo") + '".\n\n¿Querés continuar?')) {
+			return false;
+		}
+		elementos = d.cosas;
+		relaciones = d.lineas;
+		memoria = [];
+		elegido = null;
+		desde = null;
+		uniendo = false;
+		mostrar(true);
+		ajustar();
+		pintar();
+		util.marcarCambios();
+		util.aviso("Se abrió " + (nombre || "el diagrama") + ": " +
+			d.cosas.length + (d.cosas.length === 1 ? " elemento" : " elementos") + " y " +
+			d.lineas.length + (d.lineas.length === 1 ? " relación" : " relaciones") +
+			(d.sueltas > 0 ? " (se ignoraron " + d.sueltas + " relaciones sueltas)" : ""));
+		return true;
+	}
+
 	function iniciar() {
 		var casa = lienzoUml();
 		if (!casa) { return; }
@@ -984,6 +1056,7 @@ var uml = (function () {
 			"umlBorrar": borrarElegido,
 			"umlSync": sincronizar,
 			"umlLeer": traerDelNs,
+			"umlGuardarUxf": bajarUxf,
 			"umlZoomOut": function () { zoomCentro(nivelZoom - 0.1); },
 			"umlZoomIn": function () { zoomCentro(nivelZoom + 0.1); },
 			"umlZoomReset": function () { zoomCentro(1); },
@@ -1071,6 +1144,13 @@ var uml = (function () {
 	o.mostrar = mostrar;
 	o.tocarVista = function () { mostrar(!vista); };
 	o.sincronizar = sincronizar;
+	o.exportarUxf = bajarUxf;
+	o.esUxf = function (nombre) { return /\.(uxf|uxl)$/i.test(nombre || ""); };
+	o.abrirArchivo = function (f) {
+		var lector = new FileReader();
+		lector.onload = function (e) { abrirUxf(e.target.result, f.name); };
+		lector.readAsText(f);
+	};
 
 	o.guardar = function () {
 		if (!elementos.length && !relaciones.length && !memoria.length) { return null; }
