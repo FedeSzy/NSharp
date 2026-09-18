@@ -39,10 +39,6 @@ html {
 	min-width: fit-content;
 }
 
-/*::-webkit-scrollbar {
-    display: none;
-}*/
-
 .statements {
 	border: none;
 }
@@ -84,12 +80,12 @@ html {
 }
 
 .switch-add-button {
-	color: #50b271; /*w3 pale green*/
+	color: #50b271;
     top: 2px;
 }
 
 .switch-remove-button {
-	color: #b25050; /*w3 pale red*/
+	color: #b25050;
     bottom: 2px;
 }
 
@@ -136,7 +132,6 @@ html {
 	width: 22%;
 	right: 0;
 	overflow-y: auto;
-	/* display: none; */
 }
 
 #sectionDiagram {
@@ -159,15 +154,6 @@ html {
 	margin-right: 22%;
 }
 
-
-/* #diagramsContainer>.diagram-item {
-	font-size: 14px;
-	text-align: left;
-}
-
-#diagramsContainer>.diagram-item>p:last-child {
-	text-indent: 10%;
-} */
 
 #modalToSave {
 	display: block;

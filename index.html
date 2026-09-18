@@ -63,16 +63,6 @@
 		<img src="img/ort-logo-blanco.png" class="w3-image w3-bar-item" id="ortLogo" alt="Logo ORT" />
 		<img src="img/nsharp-logo-white.png" class="w3-image w3-bar-item" id="nsplusLogo" alt="Logo NS Sharp" />
 
-		<div id="nshFind" class="w3-bar-item">
-			<div class="nsh-find-field">
-				<i class="fa fa-search"></i>
-				<input id="nshFindInput" type="text" autocomplete="off"
-					placeholder="Buscar clases, métodos y bloques (Ctrl+F)" />
-				<button type="button" id="nshFindClear" title="Limpiar"><i class="fa fa-times"></i></button>
-			</div>
-			<div id="nshFindResults" class="invisible"></div>
-		</div>
-
 		<div class="w3-bar-item">
 			<button type="button" id="importProjectBtn" title="Abrir un .nsplus o un .uxf de UMLet (Ctrl+O)"
 				class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"><i class="fa fa-folder-open-o"></i></button>
@@ -126,11 +116,20 @@
 			</div>
 		</div>
 
-		<div class="w3-bar-item switcher-block">
-			<span class="w3-bar-item">Colorear </span>
-			<label class="switcher-button">
+		<div id="nshFind" class="w3-bar-item">
+			<div class="nsh-find-field">
+				<i class="fa fa-search"></i>
+				<input id="nshFindInput" type="text" autocomplete="off"
+					placeholder="Buscar clases, métodos y bloques (Ctrl+F)" />
+				<button type="button" id="nshFindClear" title="Limpiar"><i class="fa fa-times"></i></button>
+			</div>
+			<div id="nshFindResults" class="invisible"></div>
+		</div>
+
+		<div class="w3-bar-item">
+			<label class="nsh-toggle" title="Colorear los bloques del diagrama">
 				<input type="checkbox" id="checkColors" checked>
-				<span class="slider round"></span>
+				<span class="nsh-toggle-cara"><i class="fa fa-paint-brush"></i> Color</span>
 			</label>
 		</div>
 
@@ -199,9 +198,6 @@
 						class="fa fa-sticky-note-o"></i> Nota</button>
 				<span class="uml-sep"></span>
 				<span id="umlRelTipos" class="uml-tipos"></span>
-				<button type="button" id="umlUnir" class="uml-btn"
-					title="Relacionar dos clases: elegí primero la de origen y después la de destino (R)"><i
-						class="fa fa-link"></i></button>
 				<button type="button" id="umlBorrar" class="uml-btn uml-feo"
 					title="Eliminar la clase, la nota o la relación seleccionada (Supr)"><i
 						class="fa fa-trash"></i></button>

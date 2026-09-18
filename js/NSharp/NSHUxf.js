@@ -41,9 +41,6 @@ var uxf = (function () {
 		return { x: r.cx + dx * s, y: r.cy + dy * s };
 	}
 
-	// El texto de una relación se escribe como en el panel del editor: la primera
-	// línea es el rótulo, "--> algo" es el extremo de destino y "<-- algo" el de
-	// origen. Acá se parte en esas tres piezas para poder pasarlas a UMLet.
 	function partesTexto(txt) {
 		var renglones = String(txt == null ? "" : txt).split(/\r?\n/);
 		var rotulo = renglones.length ? [renglones[0]] : [];
@@ -59,7 +56,6 @@ var uxf = (function () {
 		return { rotulo: rotulo.join("\n"), ini: ini, fin: fin };
 	}
 
-	// m1 es el extremo donde arranca la línea (el origen) y m2 donde termina.
 	function panelDeRelacion(l) {
 		var p = partesTexto(l.txt);
 		var t = LT[l.t] || LT.aso;
@@ -136,14 +132,12 @@ var uxf = (function () {
 		return v;
 	}
 
-	// UMLet guarda cardinalidad (m), rol (r) y calificador (q) de cada extremo.
 	function extremo(panel, n) {
 		return ["m" + n, "r" + n, "q" + n].map(function (k) {
 			return atributo(panel, k);
 		}).filter(function (s) { return s; }).join(" ");
 	}
 
-	// Rearma el texto que espera el editor a partir del panel de UMLet.
 	function textoDeRelacion(panel, invertir) {
 		var cuerpo = textoLimpio(panel);
 		var ini = extremo(panel, invertir ? 2 : 1);
@@ -178,7 +172,6 @@ var uxf = (function () {
 		else if (fuerte === 1) { t = punteada ? "dep" : "dir"; }
 		else { t = punteada ? "dep" : "aso"; }
 
-		// El rombo va del lado de origen; el triángulo y la flecha, del lado de destino.
 		var invertir = false;
 		if (fuerte >= 4) { invertir = !alInicio; }
 		else if (fuerte >= 1) { invertir = alInicio; }

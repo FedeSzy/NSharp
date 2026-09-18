@@ -1,30 +1,11 @@
-// -----------------------------------
-// EXTENDED NASSI SCHNEIDERMAN DIAGRAM
-// -----------------------------------
 function eXtendendNassiShneiderman(params) {
 
 	if (!params) { params = {}; }
 	var _self = Object.create(new BaseDiagram({ "graphicType": "Nassi-Shneiderman", "prefix": "xnsd", "onrender": params["onrender"] }));
 
-	/* --- private properties and methods --- */
-
 	function makeCorner(side, caption) {
 		var canvas = document.createElement("canvas");
-		// canvas.className = "corner";
-		// var ctx = canvas.getContext("2d");
-		// ctx.beginPath();
-		// if (side == "true") {
-		// 	ctx.moveTo(-1, -1);
-		// 	ctx.lineTo(canvas.width + 1, canvas.height + 1);
-		// } else {
-		// 	ctx.moveTo(canvas.width + 1, -1);
-		// 	ctx.lineTo(-1, canvas.height + 1);
-		// }
-		// ctx.lineWidth = 3;
-		// ctx.strokeStyle = '#000000';
-		// ctx.stroke();
 		canvas.className = "corner corner-" + side;
-		//var optblock = _self.newBlock("option-block", _self.newBlock("option-background"));
 		var optblock = _self.newBlock("option-block", canvas);
 		optblock.appendChild(_self.newBlock("caption", caption));
 		return _self.newBlock("option " + side, optblock);
@@ -72,35 +53,7 @@ function eXtendendNassiShneiderman(params) {
 		return input;
 	}
 
-	/* --- diagram blocks implementation --- */
-
 	function _declarationBuilder(methodDec) {
-		/*function ifHas(value, handler, defaultValue) {
-			return (typeof value != "undefined") ?
-				handler(value) :
-				defaultValue;
-		}
-
-		function stringValue(field, defaultValue, ) {
-			if (!defaultValue) { defaultValue = ""; }
-			return (!field) ? defaultValue : field + " ";
-		}
-
-		function argumentsToString(args) {
-			var a;
-			var output = "";
-			if (args) {
-				for (a in args) {
-					if (output) { output += ", "; }
-					output += _self.htmlString(args[a]["type"]) + " " + args[a]["name"];
-				}
-			}
-			return output;
-		}
-
-		function exceptionsToString(exceptionList) {
-			return (!exceptionList) ? "" : " throws " + exceptionList.join(", ");
-		}*/
 
 		function classDeclarationBuilder(className) {
 			var box = _self.newBlock("class-declaration");
@@ -124,13 +77,6 @@ function eXtendendNassiShneiderman(params) {
 		methodDeclaration.appendChild(methodSignature);
 		return methodDeclaration;
 
-		/*return _self.newBlock("method-declaration",
-			ifHas(methodDec["class"], function (val) { return "<p>class " + val + ":</p>" }, "") +
-			stringValue(methodDec["modifiers"]) +
-			_self.htmlString(stringValue(methodDec["type"])) +
-			stringValue(methodDec["name"], "[" + _self.SYMBOLS[_self.currentLanguage].ANONYMOUS_METHOD + "]").trim() +
-			"(" + argumentsToString(methodDec["arguments"]) + ")" +
-			exceptionsToString(methodDec["throws"]));*/
 	}
 
 	function _localVarsBuilder(localVars) {
@@ -295,7 +241,6 @@ function eXtendendNassiShneiderman(params) {
 			appendFixedValue(box, ",");
 			box.appendChild(newInput(obj["step"]));
 			container.appendChild(box);
-			//container.appendChild(_self.newBlock("content", obj["variable"] + " &larr; " + obj["start"] + ", " + obj["stop"] + ", " + obj["step"], undefined, "true"));
 			return container;
 		});
 	}
@@ -308,7 +253,6 @@ function eXtendendNassiShneiderman(params) {
 			appendFixedValue(box, ":");
 			box.appendChild(newInput(obj["collection"]));
 			container.appendChild(box);
-			//container.appendChild(_self.newBlock("content", obj["class"] + " " + obj["variable"] + ": " + obj["collection"], undefined, "true"));
 			return container;
 		});
 	}
@@ -326,8 +270,6 @@ function eXtendendNassiShneiderman(params) {
 		box.appendChild(newInput(obj["value"]));
 		return box;
 	}
-
-	/* --- Nassi Shneiderman Extension: Exception blocks implementation --- */
 
 	function _throwBuilder(obj) {
 		return _self.newBlock("throw-statement", "<i>throw</i> " + _self.htmlString(obj["value"]));
@@ -354,7 +296,6 @@ function eXtendendNassiShneiderman(params) {
 		return box;
 	}
 
-	/* --- object construction --- */
 	function init() {
 		_self.addProperty("currentLanguage", _self.getValue(params["language"], _self["DEFAULT_LANGUAGE"]));
 		_self.addProperty("explicitReturn", _self.getValue(params["explicitReturn"], true));
@@ -397,12 +338,7 @@ function eXtendendNassiShneiderman(params) {
 		}
 	}
 
-	/* -- instance construction -- */
 	init();
 	return _self;
 }
-// -----------------------------------
-// EXTENDED NASSI SCHNEIDERMAN DIAGRAM
-// -----------------------------------
-// Class Synonym
 var XNSDiagramMaker = eXtendendNassiShneiderman;

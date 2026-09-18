@@ -28,8 +28,8 @@ var atajos = (function () {
 	var AYUDA_UML = [
 		["Deshacer / Rehacer", "Ctrl+Z  /  Ctrl+Y"],
 		["Nueva clase / Nueva nota", "C  /  N"],
-		["Activar el modo relacionar", "R"],
-		["Elegir el tipo de flecha", "1  a  7"],
+		["Relacionar: elegí el tipo y tocá las dos clases", "1  a  7"],
+		["Relacionar con el último tipo elegido", "R"],
 		["Editar el texto de lo elegido", "Enter  o  F2"],
 		["Mover lo elegido", "Flechas  (Shift = de a 1 px)"],
 		["Pasar al siguiente elemento", "Tab  /  Shift+Tab"],

@@ -68,10 +68,6 @@ var uml = (function () {
 		return null;
 	}
 
-	// --- Deshacer y rehacer del diagrama UML -------------------------------
-	// Guardamos el diagrama entero como texto: son pocos elementos y así no hay
-	// que llevar la cuenta de qué cambió en cada acción.
-
 	function foto() {
 		return JSON.stringify({ c: elementos, l: relaciones, m: memoria });
 	}
@@ -95,8 +91,6 @@ var uml = (function () {
 		botonesHistoria();
 	}
 
-	// Para lo que llega de a poquito (escribir en el panel, mover con las
-	// flechas) esperamos un rato y lo anotamos todo junto.
 	function anotarLuego() {
 		if (tictac) { window.clearTimeout(tictac); }
 		tictac = window.setTimeout(function () { tictac = null; anotar(); }, 450);
@@ -400,19 +394,31 @@ var uml = (function () {
 	}
 
 	function elegirTipo(t) {
-		tipoNuevo = t;
 		var l = elegido ? lineaPorId(elegido) : null;
-		var cambio = !!(l && l.t !== t);
-		if (cambio) { l.t = t; util.marcarCambios(); }
+
+		if (l) {
+			var cambio = l.t !== t;
+			tipoNuevo = t;
+			if (cambio) { l.t = t; util.marcarCambios(); }
+			pintar();
+			if (cambio) { anotarYa(); }
+			return;
+		}
+
+		var mismo = uniendo && tipoNuevo === t;
+		tipoNuevo = t;
+		uniendo = !mismo;
+		desde = null;
 		pintar();
-		if (cambio) { anotarYa(); }
+		if (uniendo) { util.aviso("Tocá la clase de origen y después la de destino"); }
 	}
 
 	function tocarUnion() {
+		if (elegido && lineaPorId(elegido)) { elegido = null; }
 		uniendo = !uniendo;
 		desde = null;
 		pintar();
-		if (uniendo) { util.aviso("Elegí primero la clase de origen y después la de destino"); }
+		if (uniendo) { util.aviso("Tocá la clase de origen y después la de destino"); }
 	}
 
 	function pintarTipos() {
@@ -421,6 +427,9 @@ var uml = (function () {
 		util.qq("#umlRelTipos .uml-tipo").forEach(function (b) {
 			b.classList.toggle("uml-tipo-on", b.getAttribute("data-uml-t") === actual);
 		});
+		var zona = document.getElementById("umlRelTipos");
+		if (zona) { zona.classList.toggle("uml-uniendo", uniendo && !l); }
+		document.body.classList.toggle("nsh-uml-uniendo", vista && uniendo && !l);
 	}
 
 	function dibujarLineas() {
@@ -562,8 +571,6 @@ var uml = (function () {
 		pintarTipos();
 		var lv = document.getElementById("umlZoomLevel");
 		if (lv) { lv.textContent = Math.round(nivelZoom * 100) + "%"; }
-		var bu = document.getElementById("umlUnir");
-		if (bu) { bu.classList.toggle("uml-on", uniendo); }
 	}
 
 	function pintarPanel() {
@@ -947,10 +954,9 @@ var uml = (function () {
 			finPan();
 			dedos = {};
 			pellizco = null;
+			document.body.classList.remove("nsh-uml-uniendo");
 		}
 		if (vista) { pintar(); }
-		// Los botones de deshacer del encabezado son los mismos para las dos
-		// vistas, así que al cambiar hay que mostrar el estado de la que queda.
 		if (vista) { botonesHistoria(); }
 		else if (typeof historial !== "undefined") { historial.pintarBotones(); }
 		acomodarPantalla();
@@ -1154,11 +1160,11 @@ var uml = (function () {
 
 		var zona = document.getElementById("umlRelTipos");
 		if (zona) {
-			VINCULOS.forEach(function (v) {
+			VINCULOS.forEach(function (v, i) {
 				var b = document.createElement("button");
 				b.type = "button";
 				b.className = "uml-tipo";
-				b.title = v.nombre;
+				b.title = v.nombre + " (" + (i + 1) + ")\nTocala y después elegí la clase de origen y la de destino";
 				b.setAttribute("data-uml-t", v.id);
 				b.appendChild(iconoVinculo(v.id));
 				b.addEventListener("click", function () { elegirTipo(v.id); });
@@ -1182,9 +1188,6 @@ var uml = (function () {
 			t.addEventListener("keydown", function (e) {
 				var ctrl = e.ctrlKey || e.metaKey;
 				var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-				// El navegador no puede deshacer en este cuadro porque el texto lo
-				// escribimos nosotros al pintar, así que acá también usamos el
-				// historial del diagrama: cada tanda de tecleo es un paso.
 				if (ctrl && (k === "z" || k === "y")) {
 					e.preventDefault();
 					e.stopPropagation();
@@ -1206,7 +1209,6 @@ var uml = (function () {
 		var botones = {
 			"umlNuevaClase": function () { var p = centroVista(); nueva("clase", p.x - 105, p.y - 60); },
 			"umlNuevaNota": function () { var p = centroVista(); nueva("nota", p.x - 75, p.y - 35); },
-			"umlUnir": tocarUnion,
 			"umlBorrar": borrarElegido,
 			"umlSync": sincronizar,
 			"umlLeer": traerDelNs,

@@ -1,73 +1,178 @@
-<html>
-<head>
-    <link rel="stylesheet" type="text/css" href="css/XNSDiagram.css" />
-    <script type="application/javascript" src="js/html2canvas.js"></script>
-    <script type="application/javascript" src="js/Enumeration.js"></script>
-    <script type="application/javascript" src="js/ClassConstructor.js"></script>
-    <script type="application/javascript" src="js/BaseDiagram.js"></script>
-    <script type="application/javascript" src="js/DiagramObject.js"></script>
-    <script type="application/javascript" src="js/XNSDiagram.js"></script>
-    <style>
-        body {
-            font-family: helvetica, arial, sans-serif;
-        }
-        h1 {
-            padding: 10pt;
-            font-size: 24pt;
-        }
-        
-        h2 {
-            padding: 10;
-        }
-        
-        h1.external, h2.external, h3.external, p.external {
-            padding-top: 15pt;
-            padding-bottom: 5pt;
-        }
-        
-        h2.external {
-            font-size: 20pt;
-        }
-        
-        h3.external {
-            font-size: 14pt;
-        }
-        
-        p.external {
-            padding: 10pt;
-            font-size: 12pt;
-        }
-        
-        #diagramContainer {
-            display: block;
-            padding: 10pt;
-            max-width: 640px;
-        }
+<!DOCTYPE html>
+<html lang="es">
 
-        hr.external {
-            height: 1pt;
-            background-color: #CCC;
-            margin-top: 20pt;
-            margin-bottom: 10pt;
-            border: none;
-        }
-        
-        pre.external {
-            border: solid 1px #CCC;
-            padding: 10pt;
-            box-sizing: border-box;
-            background-color: #FFA;
-        }
-        
-        .diabox, image.output {
-            border: solid 1px #F00;
-        }
-    </style>
-    <script>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Diagramas de Nassi-Shneiderman: qué son y cómo se arman | NS Sharp</title>
+	<meta name="description"
+		content="Qué es un diagrama de Nassi-Shneiderman, para qué sirve y cómo se arma bloque por bloque: asignación, entrada, salida, if, switch, while, for, for-each y try-catch. Documentación de los diagramas extendidos (XNSD) de NS Sharp, el editor online gratuito." />
+	<meta name="author" content="Federico Szymsiowicz" />
+	<meta name="theme-color" content="#3f51b5" />
+	<link rel="canonical" href="https://ns-sharp.vercel.app/documentation.html" />
+
+	<meta property="og:type" content="article" />
+	<meta property="og:site_name" content="NS Sharp" />
+	<meta property="og:locale" content="es_AR" />
+	<meta property="og:url" content="https://ns-sharp.vercel.app/documentation.html" />
+	<meta property="og:title" content="Diagramas de Nassi-Shneiderman: qué son y cómo se arman" />
+	<meta property="og:description"
+		content="Guía de los diagramas de Nassi-Shneiderman extendidos (XNSD): para qué sirven y cómo funciona cada bloque, con ejemplos." />
+	<meta property="og:image" content="https://ns-sharp.vercel.app/img/nsharp-favicon.png" />
+	<meta name="twitter:card" content="summary" />
+
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "TechArticle",
+		"headline": "Diagramas de Nassi-Shneiderman: qué son y cómo se arman",
+		"description": "Qué es un diagrama de Nassi-Shneiderman, para qué sirve y cómo se arma cada uno de sus bloques.",
+		"inLanguage": "es",
+		"author": { "@type": "Person", "name": "Federico Szymsiowicz" },
+		"isPartOf": {
+			"@type": "WebApplication",
+			"name": "NS Sharp",
+			"url": "https://ns-sharp.vercel.app/"
+		}
+	}
+	</script>
+
+	<link rel="icon" href="img/nsharp-favicon.png" type="image/png" />
+	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
+	<link rel="stylesheet" type="text/css" href="css/NSHTheme.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPDiagram.css" />
+	<link rel="stylesheet" type="text/css" href="css/NSPColors.css" />
+	<style>
+		body {
+			margin: 0;
+			padding: 0 20px 60px;
+			background: var(--nsh-bg);
+			color: var(--nsh-text);
+			font-family: system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+			line-height: 1.65;
+		}
+
+		.doc {
+			max-width: 820px;
+			margin: 0 auto;
+		}
+
+		.doc-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			flex-wrap: wrap;
+			padding: 18px 0;
+			border-bottom: 1px solid var(--nsh-border);
+		}
+
+		.doc-top img {
+			height: 38px;
+			width: auto;
+		}
+
+		.doc-volver {
+			display: inline-block;
+			background: var(--nsh-accent);
+			color: var(--nsh-on-accent);
+			text-decoration: none;
+			font-weight: 600;
+			font-size: 14px;
+			padding: 9px 16px;
+			border-radius: 8px;
+		}
+
+		.doc-volver:hover {
+			background: var(--nsh-accent-strong);
+		}
+
+		h1 {
+			font-size: 30px;
+			line-height: 1.25;
+			margin: 34px 0 10px;
+		}
+
+		h2 {
+			font-size: 21px;
+			margin: 38px 0 10px;
+			padding-top: 14px;
+			border-top: 1px solid var(--nsh-border);
+		}
+
+		h3 {
+			font-size: 15px;
+			margin: 22px 0 8px;
+			color: var(--nsh-text-muted);
+		}
+
+		.doc-entrada {
+			font-size: 18px;
+			color: var(--nsh-text-muted);
+			margin-bottom: 26px;
+		}
+
+		p, li {
+			font-size: 15.5px;
+		}
+
+		a {
+			color: var(--nsh-accent);
+		}
+
+		pre {
+			background: var(--nsh-surface-2);
+			border: 1px solid var(--nsh-border);
+			border-radius: 8px;
+			padding: 12px 14px;
+			overflow-x: auto;
+			font-family: ui-monospace, Consolas, monospace;
+			font-size: 12.5px;
+			line-height: 1.5;
+			color: var(--nsh-text);
+		}
+
+		code {
+			background: var(--nsh-surface-3);
+			border-radius: 4px;
+			padding: 1px 5px;
+			font-family: ui-monospace, Consolas, monospace;
+			font-size: 13px;
+		}
+
+		hr {
+			border: 0;
+			border-top: 1px solid var(--nsh-border);
+			margin: 26px 0;
+		}
+
+		.diabox {
+			background: #fff;
+			border: 1px solid var(--nsh-border);
+			border-radius: 8px;
+			padding: 16px;
+			margin: 12px 0;
+			overflow-x: auto;
+		}
+
+		.doc-pie {
+			margin-top: 50px;
+			padding-top: 18px;
+			border-top: 1px solid var(--nsh-border);
+			font-size: 13.5px;
+			color: var(--nsh-text-muted);
+		}
+	</style>
+	<script type="application/javascript" src="js/XNS-core/Enumeration.js"></script>
+	<script type="application/javascript" src="js/XNS-core/ClassConstructor.js"></script>
+	<script type="application/javascript" src="js/XNS-core/BaseDiagram.js"></script>
+	<script type="application/javascript" src="js/XNS-core/DiagramObject.js"></script>
+	<script type="application/javascript" src="js/XNS-core/XNSDiagramMaker.js"></script>
+	<script>
         window.onload = function () {
 
             var mainbox = document.getElementById("diagramContainer");
-            var xnsd = new XNSDiagram();
+            var xnsd = new XNSDiagramMaker();
             var declaration;
 
             function insertHeader(elem, description) {
@@ -93,17 +198,14 @@
 
             function insertExample(title, obj) {
                 insertHeader( mainbox, title);
+                var marco = document.createElement("div");
+                marco.className = "diabox";
                 var diabox = document.createElement("div");
-                diabox.className = "diabox";
-                mainbox.appendChild(diabox);
-                var diagram = xnsd.render(diabox, (obj.statements) ? obj : { "statements": [ obj ] });
-                diagram.createImage(function(img) {
-                    img.className = "output";
-                    mainbox.appendChild(img);
-                } );
+                marco.appendChild(diabox);
+                mainbox.appendChild(marco);
+                xnsd.render(diabox, (obj.statements) ? obj : { "statements": [ obj ] });
                 insertStructureExample(mainbox, obj);
             }
-            // general structure, including method declaration
             insertExample(
                 "Estructura general, incluyendo la declaración del método y sus variables",
                 {
@@ -132,17 +234,14 @@
                 }
             ]});
             
-            // assignament example
             insertExample(
                 "Asignación (type = 'assignment')",
                 { "type": "assignment", "data": { "variable": "variable", "value": "valor o expresión" } });
             
-            // output example
             insertExample(
                 "Output (type = 'output')",
                 { "type": "output", "data": { "message": "valor o expresión" } });
             
-            // input example
             insertExample(
                 "Input (type = 'input')",
 				{
@@ -154,17 +253,14 @@
 					]
 				});
             
-            // call example
             insertExample(
                 "Llamada a método o subrutina (type = 'call')",
                 { "type": "call", "data": { "statement": "[objeto.]metodo([argumentos...])" } });
             
-            // return example
             insertExample(
                 "Return (type = 'return')",
                 { "type": "return", "data": { "value": "valor o expresión" } });
             
-            // if example
             insertExample(
                 "If (type = 'if' or 'conditional')",
                 { "type": "if",
@@ -175,7 +271,6 @@
                           }    
                 });
             
-            // switch example
             insertExample(
                 "Switch (type = 'switch'), cada opcion puede ser 'value' o 'case', es indistinto",
                 {
@@ -226,7 +321,6 @@
                         }
             });
             
-            // while loop example
             insertExample(
                 "While (type = 'while') (con inicialización previa)",
                 { "statements": [
@@ -260,7 +354,6 @@
                     }
                 ] });
             
-            // while loop example
             insertExample(
                 "Do-while (type = 'dowhile') (con inicialización previa)",
                 {
@@ -289,7 +382,6 @@
                 ]
             });
             
-            // for example
             insertExample(
                 "For (type = 'for')",
                 {
@@ -312,7 +404,6 @@
                 }
             });
             
-            // for-each example
             insertExample(
                 "For-each (type = 'foreach')",
                 {
@@ -334,7 +425,6 @@
                 }
             });
             
-            // Try-catch-finally and throw example
             insertExample(
                 "Try-catch-finally +  throw (types = 'try', 'catch', 'finally, 'throw')",
                 {
@@ -412,10 +502,85 @@
         }
     </script>
 </head>
+
 <body>
-    <h1 class="external">eXtendend Nassi-Shneiderman Diagrams (XNSD)</h1>
-    <h2 class="external">Ejemplos de diagramas</h2>
-    <p class="external">A continuación, cada uno de los bloques componentes de XNSD:</p>
-    <div id="diagramContainer"></div>
+	<div class="doc">
+		<div class="doc-top">
+			<img src="img/nsharp-logo-indigo.png" alt="NS Sharp" />
+			<a class="doc-volver" href="/">Abrir el editor</a>
+		</div>
+
+		<h1>Diagramas de Nassi-Shneiderman: qué son y cómo se arman</h1>
+		<p class="doc-entrada">Esta es la documentación de los diagramas que dibuja
+			<a href="/">NS Sharp</a>, un editor online y gratuito de diagramas de
+			Nassi-Shneiderman extendidos (XNSD), pensado para aprender a programar.</p>
+
+		<h2>Qué es un diagrama de Nassi-Shneiderman</h2>
+		<p>Un diagrama de Nassi-Shneiderman — también llamado diagrama NS o
+			<i>diagrama de Chapin</i> — es una forma de representar un algoritmo con
+			cajas encastradas en lugar de flechas. Lo inventaron Isaac Nassi y Ben
+			Shneiderman en 1972, justamente para obligar a escribir programas
+			estructurados: como cada instrucción es una caja que ocupa todo el ancho de
+			la que la contiene, no hay manera de dibujar un salto arbitrario.</p>
+		<p>La diferencia con un diagrama de flujo común es esa: en un diagrama de
+			flujo podés tirar una flecha desde cualquier lado hacia cualquier otro, y
+			terminar con un algoritmo que después no se puede escribir en código. En un
+			diagrama de Nassi-Shneiderman eso no entra: la estructura del dibujo es la
+			estructura del programa. Por eso se usa tanto en las primeras materias de
+			programación.</p>
+		<p>Se lee siempre de arriba hacia abajo. Cada caja es una instrucción, y las
+			cajas que están adentro de otra son las que se ejecutan dentro de esa
+			condición o de ese ciclo.</p>
+
+		<h2>Qué agrega la versión extendida (XNSD)</h2>
+		<p>El diagrama de Nassi-Shneiderman original alcanza para un algoritmo suelto,
+			pero se queda corto cuando lo que estás aprendiendo es programación orientada
+			a objetos. La versión extendida (<i>eXtended Nassi-Shneiderman Diagrams</i>,
+			XNSD) le suma lo que falta:</p>
+		<ul>
+			<li>la <b>declaración del método</b>: visibilidad, tipo de retorno, clase,
+				nombre, parámetros y excepciones que lanza;</li>
+			<li>las <b>variables locales</b> y las constantes, declaradas arriba de todo;</li>
+			<li>bloques para <b>llamar a otros métodos</b> y para <b>devolver</b> un valor;</li>
+			<li><b>try / catch / finally</b> y <b>throw</b>, para el manejo de errores;</li>
+			<li>ciclos <b>for</b> y <b>for-each</b> además de los <b>while</b>, y el
+				<b>switch</b> con sus casos.</li>
+		</ul>
+		<p>Con eso, un diagrama ya no es sólo un dibujo: se parece lo suficiente al
+			código como para que pasar de uno al otro sea directo.</p>
+
+		<h2>Qué es NS Sharp</h2>
+		<p><a href="/">NS Sharp</a> es un editor de estos diagramas que funciona
+			enteramente en el navegador: no hay que instalar nada, no hay que crear
+			ninguna cuenta y los archivos quedan en tu máquina. Los diagramas se arman
+			arrastrando bloques desde un panel lateral, y se organizan en clases y
+			métodos, como en un proyecto de verdad.</p>
+		<p>Es la evolución de <b>NS Plus</b> y abre sus mismos archivos
+			<code>.nsplus</code>, así que si venís de esa herramienta no perdés nada de
+			lo que tenías hecho. Además tiene:</p>
+		<ul>
+			<li>un <b>diagrama de clases UML</b> integrado, que se puede transcribir en
+				las dos direcciones: generar las clases y los métodos del proyecto a partir
+				del UML, o dibujar el UML a partir de lo que ya tiene el proyecto;</li>
+			<li>importación y exportación de diagramas UML en formato
+				<code>.uxf</code>, el de UMLet y UMLetino;</li>
+			<li>exportación a <b>PDF</b> para entregar o imprimir;</li>
+			<li>temas claro y oscuro, buscador, deshacer y rehacer, y atajos de teclado.</li>
+		</ul>
+		<p>Se usa en ORT Argentina, y es gratis para cualquiera que lo quiera usar.</p>
+
+		<h2>Los bloques, uno por uno</h2>
+		<p>Abajo está cada bloque que compone un diagrama XNSD: primero cómo se ve
+			dibujado, y después la estructura JSON con la que se define internamente.
+			Esa estructura es la que se guarda dentro de los archivos
+			<code>.nsplus</code>, y sirve si querés generar diagramas desde otro
+			programa.</p>
+		<div id="diagramContainer"></div>
+
+		<div class="doc-pie">
+			NS Sharp · ORT Argentina — <a href="/">volver al editor</a>
+		</div>
+	</div>
 </body>
+
 </html>

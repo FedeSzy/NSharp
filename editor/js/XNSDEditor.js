@@ -52,12 +52,6 @@ window.onload = function () {
 			for (var d=0; d < diagram.length; d++) {
 				window.setTimeout(function(dObj) {
 					renderbox.innerHTML += dObj.toHTML();
-					/*
-					dObj.createImage(function(img) {
-						img.className = "output";
-						renderBox.appendChild(img);
-					});
-					*/
 				}, d*1000, diagram[d]);
 			}
 		} else {
@@ -89,7 +83,6 @@ window.onload = function () {
 
 	setEvent(document.getElementById("genButton"), "click", render);
 	
-	/* Tablero de generación de plantillas */
 	var templates = {
 		"base": "\t\"declaration\": {\n\t\t\"class\": \"[classname]\",\n" +
 				"\t\t\"modifiers\": \"[public||private] [abstract] [static] [final]\",\n" +
@@ -132,7 +125,6 @@ window.onload = function () {
 	
 	
 	target.onblur = checkAndCompile();
-	//var compileRule = /Unexpected (token ([{,:])|string) in JSON at position ([0-9]+)/g
 	
 	function checkAndCompile() {
 		var diagramStructure = target.value;

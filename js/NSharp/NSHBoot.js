@@ -42,8 +42,6 @@ var arranque = (function () {
 		}
 	}
 
-	// El menú de parámetros y variables se despliega hacia abajo. Como el encabezado
-	// recorta lo que sobresale de su alto, la lista vive en el body y se ubica a mano.
 	function menuDeclaraciones() {
 		var caja = document.getElementById("diagramButtons");
 		var envoltorio = caja ? caja.parentNode : null;

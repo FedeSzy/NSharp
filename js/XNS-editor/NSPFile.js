@@ -21,7 +21,6 @@ function tieneNombre() {
 	return !!n && n !== SIN_NOMBRE;
 }
 
-// El nombre se pide recién al guardar, y una sola vez por proyecto.
 function pedirNombre() {
 	var n = prompt("Nombre del proyecto:", "");
 	if (n === null) { return false; }

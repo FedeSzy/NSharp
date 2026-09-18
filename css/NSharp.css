@@ -64,8 +64,6 @@
 	position: relative;
 }
 
-/* El menú de parámetros y variables se despliega hacia abajo, en una sola columna.
-   Va fijo porque el encabezado recorta lo que se sale de su alto. */
 #diagramButtons {
 	position: fixed;
 	min-width: 200px;
@@ -130,6 +128,52 @@
 .nsh-iconbtn:disabled {
 	opacity: .35;
 	cursor: default;
+}
+
+.nsh-toggle {
+	display: inline-flex;
+	cursor: pointer;
+}
+
+.nsh-toggle input {
+	position: absolute;
+	width: 0;
+	height: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.nsh-toggle-cara {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	color: var(--nsh-bar-text);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: .3px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	opacity: .8;
+	white-space: nowrap;
+	transition: background-color .15s ease, opacity .15s ease;
+}
+
+.nsh-toggle:hover .nsh-toggle-cara {
+	opacity: 1;
+	background: color-mix(in srgb, var(--nsh-bar-text) 18%, transparent);
+}
+
+.nsh-toggle input:checked+.nsh-toggle-cara {
+	opacity: 1;
+	background: var(--nsh-surface);
+	color: var(--nsh-accent);
+	box-shadow: var(--nsh-shadow-sm);
+}
+
+.nsh-toggle input:focus-visible+.nsh-toggle-cara {
+	outline: 2px solid var(--nsh-bar-text);
+	outline-offset: 1px;
 }
 
 #nshThemeSelect {

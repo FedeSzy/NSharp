@@ -127,6 +127,11 @@ body.nsh-uml-on #buttonOpenBlocks {
 	color: var(--nsh-accent);
 }
 
+.uml-tipos.uml-uniendo {
+	border-color: var(--nsh-accent);
+	box-shadow: 0 0 0 2px var(--nsh-accent-soft);
+}
+
 .uml-tipo-on {
 	background: var(--nsh-accent);
 	color: var(--nsh-on-accent);
@@ -187,8 +192,6 @@ body.nsh-uml-on #buttonOpenBlocks {
 	min-height: 0;
 }
 
-/* Envuelve sólo el lienzo para que la barra de zoom quede flotando sobre él,
-   centrada, igual que la de los diagramas de Nassi-Shneiderman. */
 #umlLienzo {
 	position: relative;
 	flex: 1 1 auto;
@@ -230,6 +233,11 @@ body.nsh-uml-on #buttonOpenBlocks {
 	font-family: system-ui, sans-serif;
 	font-size: 11px;
 	fill: var(--nsh-text-muted);
+}
+
+body.nsh-uml-uniendo #umlScroll,
+body.nsh-uml-uniendo #umlScroll * {
+	cursor: crosshair;
 }
 
 body.nsh-uml-pan #umlScroll,

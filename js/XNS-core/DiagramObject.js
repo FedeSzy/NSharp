@@ -1,14 +1,7 @@
-// -----------------------
-// BASE DIAGRAM Object CLASS
-// -----------------------
 function DiagramObject(params) {
 
     var _self = Object.create(new ClassConstructor());
 
-    /* --- private methods --- */
-    
-    /* --- published properties and methods --- */
-    
     function _toHTML() {
         return _self.HTML.innerHTML;
     }
@@ -38,7 +31,6 @@ function DiagramObject(params) {
         return _self.image;
     }
 
-    /* --- object construction --- */
     function init() {
         _self.addProperty("DEFINITION", params["json"] || null, {"writable": false});
         _self.addProperty("HTML", params["html"] || null, {"writable": false});
@@ -52,6 +44,3 @@ function DiagramObject(params) {
     init();
     return _self;
 }
-// ---------------------------
-// END BASE DIAGRAM CLASS
-// ---------------------------

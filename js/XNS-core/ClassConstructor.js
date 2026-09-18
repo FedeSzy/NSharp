@@ -1,8 +1,5 @@
-﻿// -----------------------
-// CLASS_CONSTRUCTOR CLASS
-// -----------------------
+﻿
 function ClassConstructor() {
-    /* --- private properties and methods --- */
 
     var _self = this;
     var _properties = {};
@@ -19,8 +16,6 @@ function ClassConstructor() {
         "to_clone": false,
         "get": null
     };
-
-    /* --- published properties and methods --- */
 
     function _addProperty(propertyName, value, modAttrs) {        
         if (!_self.hasOwnProperty(propertyName)) {
@@ -116,6 +111,3 @@ function ClassConstructor() {
     Object.defineProperty(_self, "MEMBER_VISIBILITY", { "configurable": false, "enumerable" : "true", "get": _getVisibility } );
     return _self;
 }
-// ---------------------------
-// END CLASS_CONSTRUCTOR CLASS
-// ---------------------------

@@ -1,6 +1,4 @@
-﻿// -----------------------
-// BASE DIAGRAM BASE CLASS
-// -----------------------
+﻿
 function BaseDiagram(params) {
 
 	if (!params) {
@@ -11,13 +9,11 @@ function BaseDiagram(params) {
 	var _prefix = "ns";
 	var _internalID = 0;
 
-	/* --- private properties and methods --- */
 	function nextInternalId() {
 		return _internalID++;
 	}
 
 	function addLanguages() {
-		// languages dictionaries
 		_self.addEnumProperty("LANGUAGES", ["EN", "ES"]);
 		_self.addProperty("SYMBOLS", [{
 			"INPUT": "I",
@@ -44,7 +40,6 @@ function BaseDiagram(params) {
 		});
 	}
 
-	/* --- published properties and methods --- */
 	function _register(name, method) {
 		_self.addMethod(name, method);
 		Object.defineProperty(_self, name, {
@@ -95,7 +90,6 @@ function BaseDiagram(params) {
 		});
 	}
 
-	/* --- object construction --- */
 	function init() {
 		addLanguages();
 		_self.addProperty("graphicType", params["graphicType"] || _graphicType);
@@ -111,6 +105,3 @@ function BaseDiagram(params) {
 	init();
 	return _self;
 }
-// ---------------------------
-// END BASE DIAGRAM CLASS
-// ---------------------------

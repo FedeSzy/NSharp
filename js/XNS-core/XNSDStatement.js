@@ -1,6 +1,3 @@
-// ------------------
-// STATEMENT CLASS
-// ------------------
 function XNSDStatement(params) {
     if (!params) { params =  {}; }
     var _self = Object.create(new ClassConstructor());
@@ -8,9 +5,6 @@ function XNSDStatement(params) {
     var _json = {};
     var _elements = null;
     
-    /* --- private properties and methods --- */
-
-    /* --- published properties and methods --- */
     function _createInstance(){
         _json = { "type" : _self.type };
         var data = {};
@@ -32,7 +26,6 @@ function XNSDStatement(params) {
         return _elements;
     }
     
-    /* --- object construction --- */
     function init() {
         _self.addProperty("type", params["type"]);
         _self.addProperty("structure", params["structure"]);
@@ -44,6 +37,3 @@ function XNSDStatement(params) {
     init();
     return _self;
 }
-// ----------------------
-// END STATEMENT CLASS
-// ----------------------

@@ -320,7 +320,7 @@ function Arbol() {
 		historial.reset(d);
 	}
 
-	function pegarDelSistema(e) {                              // ← esto es nuevo
+	function pegarDelSistema(e) {
 	if (util.escribiendo(e.target)) { return; }
 	var txt = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
 	var carga = null;

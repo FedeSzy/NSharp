@@ -108,7 +108,6 @@ var historial = (function () {
 	}
 
 	function pintarBotones() {
-		// En la vista UML los mismos botones muestran el historial del UML.
 		if (typeof uml !== "undefined" && uml.activo()) { return; }
 		var a = document.getElementById("nshUndoBtn");
 		var b = document.getElementById("nshRedoBtn");

@@ -53,11 +53,6 @@
 	margin: 0 !important;
 }
 
-/*.local-variable-declaration,
-.local-const-declaration {
-    padding: 5pt 0;
-}*/
-
 .parameter-declaration {
 	margin-top: 0;
 	margin-bottom: 0;
@@ -194,7 +189,6 @@
     position: relative;
     vertical-align: top;
 	min-width: 15px;
-	/* width: 50%; */
 }
 
 .switch>.body .case {
@@ -409,8 +403,6 @@
 	width: 100%;
 	height: 0;
 	border: 0;
-	/*border: 1px dashed #2c637f;
-    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGElEQVQYV2NkgIAGKGZghArAKXSBBgwVAEPuAYWs0fxxAAAAAElFTkSuQmCC);*/
 }
 
 
@@ -462,8 +454,6 @@
 .arrow {
 	font-size: 13.5pt !important;
 }
-
-/** -- Exception extensions -- **/
 
 .try-statement,
 .catch-statement,
