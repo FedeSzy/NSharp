@@ -56,36 +56,6 @@
 	<link rel="stylesheet" type="text/css" href="css/NSharp.css" />
 	<link rel="stylesheet" type="text/css" href="css/NSHUml.css" />
 	<link rel="stylesheet" type="text/css" href="css/NSPColors.css" id="css/NSPColors.css" />
-	<style>
-		/* El header tiene clase w3-bar, y w3.css fuerza position:static en
-		   cualquier .w3-dropdown-hover dentro de un .w3-bar. Por eso hay que
-		   pisarlo con un id propio para que el menú se ancle bien al botón.
-		   Este bloque va al final del head para ganar cualquier empate de
-		   especificidad contra las demás hojas de estilo.
-
-		   #fileButtons usa position:fixed (no absolute) a propósito: #header
-		   tiene overflow-y:hidden (NSharp.css) para el scroll horizontal en
-		   mobile, y eso recorta cualquier descendiente absolute que se salga
-		   de su caja. Un elemento fixed no se recorta por el overflow de un
-		   ancestro sin transform/filter, así que se ubica "a mano" con JS
-		   (ver script al final del body) en vez de con top/left en %. */
-		#header {
-			z-index: 10000 !important;
-		}
-		#fileMenuWrap {
-			position: relative !important;
-		}
-		#fileButtons {
-			position: fixed !important;
-			top: 0;
-			left: 0;
-			bottom: auto !important;
-			right: auto !important;
-			margin-top: 0;
-			padding-top: 4px;
-			z-index: 9999 !important;
-		}
-	</style>
 </head>
 
 <body>
@@ -94,21 +64,21 @@
 		<img src="img/nsharp-logo-white.png" class="w3-image w3-bar-item" id="nsplusLogo" alt="Logo NS Sharp" />
 
 		<div class="w3-bar-item">
-			<div id="fileMenuWrap" class="w3-dropdown-hover w3-mobile">
-				<button type="button" class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge" title="Archivo">
+			<div id="fileMenuWrap" class="nsh-menuwrap">
+				<button type="button" id="fileMenuBtn" class="w3-btn w3-text-dark-gray w3-light-grey w3-xlarge"
+					title="Archivo">
 					<i class="fa fa-folder-open-o"></i> <i class="fa fa-caret-down"></i>
 				</button>
-				<div id="fileButtons" class="w3-dropdown-content w3-light-grey w3-card-4 w3-mobile">
-					<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="importProjectBtn"
+				<div id="fileButtons">
+					<a type="button" class="nsh-menu-item" id="importProjectBtn"
 						title="Abrir un .nsplus o un .uxf de UMLet (Ctrl+O)">
 						<i class="fa fa-folder-open-o"></i> Abrir
 					</a>
-					<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="exportProjectBtn"
+					<a type="button" class="nsh-menu-item" id="exportProjectBtn"
 						title="Guardar como .nsplus (Ctrl+S)">
 						<i class="fa fa-floppy-o"></i> Guardar
 					</a>
-					<a type="button" class="w3-btn w3-light-grey w3-hover-indigo w3-text-pink" id="exportPDFBtn"
-						title="Exportar a PDF">
+					<a type="button" class="nsh-menu-item nsh-menu-peligro" id="exportPDFBtn" title="Exportar a PDF">
 						<i class="fa fa-file-pdf-o"></i> Exportar PDF
 					</a>
 				</div>
@@ -155,17 +125,21 @@
 			<div id="nshFindResults" class="invisible"></div>
 		</div>
 
-		<div class="w3-dropdown-hover w3-bar-item w3-mobile">
-			<button class="w3-btn w3-light-grey w3-hover-white w3-text-dark-gray w3-large"
+		<div class="w3-bar-item nsh-menuwrap">
+			<button type="button" id="diagramMenuBtn"
+				class="w3-btn w3-light-grey w3-hover-white w3-text-dark-gray w3-large"
 				title="Agregar parámetros y variables">
 				<i class="fa fa-pencil-square-o"></i> <i class="fa fa-caret-down"></i>
 			</button>
-			<div id="diagramButtons" class="w3-dropdown-content w3-light-grey w3-card-4 w3-mobile">
-				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newParameter">Parámetro</a>
-				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newInitializedConstant">Constante</a>
-				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newVariable">Variable</a>
-				<a type="button" class="w3-btn w3-light-grey w3-hover-indigo" id="newInitializedVariable">Variable
-					inicializada</a>
+			<div id="diagramButtons">
+				<a type="button" class="nsh-menu-item" id="newParameter"><i class="fa fa-sign-in"></i>
+					Parámetro</a>
+				<a type="button" class="nsh-menu-item" id="newInitializedConstant"><i class="fa fa-lock"></i>
+					Constante</a>
+				<a type="button" class="nsh-menu-item" id="newVariable"><i class="fa fa-square-o"></i>
+					Variable</a>
+				<a type="button" class="nsh-menu-item" id="newInitializedVariable"><i
+						class="fa fa-check-square-o"></i> Variable inicializada</a>
 			</div>
 		</div>
 
@@ -176,8 +150,13 @@
 			</label>
 		</div>
 
-		<div class="w3-bar-item">
-			<select id="nshThemeSelect" title="Tema de la aplicación"></select>
+		<div class="w3-bar-item nsh-menuwrap">
+			<button type="button" id="nshThemeBtn" title="Tema de la aplicación">
+				<span class="nsh-chip" id="nshThemeChip"></span>
+				<span id="nshThemeNombre"></span>
+				<i class="fa fa-caret-down"></i>
+			</button>
+			<div id="nshThemeMenu"></div>
 		</div>
 	</header>
 
@@ -279,10 +258,14 @@
 				</div>
 				<aside id="umlProps">
 					<div class="uml-props-head"><i class="fa fa-pencil"></i> <span id="umlQue">Nada elegido</span></div>
+					<div class="uml-colores-fila">
+						<span class="uml-colores-tit"><i class="fa fa-paint-brush"></i> Color</span>
+						<div id="umlColores" class="uml-colores"></div>
+					</div>
 					<textarea id="umlText" spellcheck="false" disabled
 						placeholder="Elegí una clase del diagrama para editarla acá, o agregá una con el botón Clase."></textarea>
-					<div class="uml-ayuda">
-						<b>Cómo se escribe una clase</b>
+					<details class="uml-ayuda" open>
+						<summary><i class="fa fa-caret-down uml-ayuda-flecha"></i> Cómo se escribe una clase</summary>
 						<pre>Persona
 --
 -nombre: String
@@ -290,13 +273,13 @@
 --
 +saludar(): void
 +comparar(otra: Persona): int</pre>
-					</div>
-					<div class="uml-ayuda">
-						<b>Cómo se escribe una línea</b>
+					</details>
+					<details class="uml-ayuda" open>
+						<summary><i class="fa fa-caret-down uml-ayuda-flecha"></i> Cómo se escribe una línea</summary>
 						<pre>Cardinalidad
 --> 0..n
 <-- 0..n</pre>
-					</div>
+					</details>
 				</aside>
 			</div>
 		</section>
@@ -347,6 +330,7 @@
 	<script type="application/javascript" src="js/XNS-core/XNSDiagramMaker.js"></script>
 
 	<script type="application/javascript" src="js/NSharp/NSHCore.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHDropdown.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHTheme.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHFolders.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHDiagramUtils.js"></script>
@@ -377,32 +361,6 @@
 	<script type="application/javascript" src="js/XNS-editor/NSPDiagram.js"></script>
 	<script type="application/javascript" src="js/XNS-editor/NSPProject.js"></script>
 	<script type="application/javascript" src="js/XNS-editor/NSPEditor.js"></script>
-
-	<script>
-		// #fileButtons es position:fixed para no quedar recortado por el
-		// overflow-y:hidden de #header (ver comentario en el <style> del
-		// head). Como fixed no se posiciona solo respecto al botón, hay
-		// que calcular top/left "a mano" cada vez que el menú se puede abrir.
-		(function () {
-			var wrap = document.getElementById("fileMenuWrap");
-			var menu = document.getElementById("fileButtons");
-			if (!wrap || !menu) return;
-
-			function place() {
-				var r = wrap.getBoundingClientRect();
-				menu.style.top = r.bottom + "px";
-				menu.style.left = r.left + "px";
-			}
-
-			wrap.addEventListener("mouseenter", place);
-			wrap.addEventListener("click", place);
-			wrap.addEventListener("focusin", place);
-			window.addEventListener("resize", place);
-			// capture:true para enterarse aunque el scroll sea del propio
-			// #header (overflow-x:auto) y no del window.
-			window.addEventListener("scroll", place, true);
-		})();
-	</script>
 </body>
 
 </html>

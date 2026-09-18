@@ -42,51 +42,15 @@ var arranque = (function () {
 		}
 	}
 
-	function menuDeclaraciones() {
-		var caja = document.getElementById("diagramButtons");
-		var envoltorio = caja ? caja.parentNode : null;
-		var boton = envoltorio ? envoltorio.querySelector("button") : null;
-		if (!boton) { return; }
-		var reloj = null;
-
-		document.body.appendChild(caja);
-
-		function poner() {
-			var r = boton.getBoundingClientRect();
-			var ancho = caja.offsetWidth || 200;
-			caja.style.left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8)) + "px";
-			caja.style.top = Math.round(r.bottom + 4) + "px";
-		}
-
-		function abrir() {
-			window.clearTimeout(reloj);
-			caja.classList.add("nsh-abierto");
-			poner();
-			window.requestAnimationFrame(poner);
-		}
-
-		function cerrar() {
-			window.clearTimeout(reloj);
-			caja.classList.remove("nsh-abierto");
-		}
-
-		function irCerrando() {
-			window.clearTimeout(reloj);
-			reloj = window.setTimeout(cerrar, 160);
-		}
-
-		[envoltorio, caja].forEach(function (n) {
-			n.addEventListener("pointerenter", abrir);
-			n.addEventListener("pointerleave", irCerrando);
-		});
-		boton.addEventListener("focus", abrir);
-		caja.addEventListener("click", cerrar);
-		document.addEventListener("keydown", function (e) {
-			if (e.key === "Escape") { cerrar(); }
-		});
-		window.addEventListener("resize", cerrar);
-		window.addEventListener("blur", cerrar);
-		document.getElementById("header").addEventListener("scroll", cerrar);
+	function menus() {
+		desplegable.armar(
+			document.getElementById("diagramMenuBtn"),
+			document.getElementById("diagramButtons")
+		);
+		desplegable.armar(
+			document.getElementById("fileMenuBtn"),
+			document.getElementById("fileButtons")
+		);
 	}
 
 	function botones() {
@@ -124,7 +88,7 @@ var arranque = (function () {
 		archivos.iniciar();
 		uml.iniciar();
 		botones();
-		menuDeclaraciones();
+		menus();
 		paneles();
 
 		alPintar();

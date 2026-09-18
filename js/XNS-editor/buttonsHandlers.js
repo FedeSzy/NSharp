@@ -3,8 +3,9 @@ function botonDeclaracion(e) {
 		util.aviso("Abrí un método antes de agregar parámetros o variables");
 		return;
 	}
-	var id = e.target.id;
-	var i = posicionEntreHermanos(e.target);
+	var boton = e.currentTarget || e.target;
+	var id = boton.id;
+	var i = posicionEntreHermanos(boton);
 
 	var obj = fabrica[id](declPlantillas[i]);
 	hacerArrastrable(obj);

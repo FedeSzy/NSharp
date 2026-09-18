@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
 
-# Copias viejas de la página, no tienen que competir con la principal
 Disallow: /PruebasDelHTML/
 Disallow: /editor/
 

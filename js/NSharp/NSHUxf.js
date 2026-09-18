@@ -14,6 +14,30 @@ var uxf = (function () {
 
 	var ESTILO = /^\s*(lt|bg|fg|lw|group|layer|fontsize|halign|valign|transparency|style|elementstyle|customelement|type|m1|m2|r1|r2|q1|q2)\s*=/i;
 
+	var FONDOS = {
+		azul: "blue",
+		verde: "green",
+		amarillo: "yellow",
+		naranja: "orange",
+		rojo: "red",
+		violeta: "magenta",
+		rosa: "pink",
+		gris: "gray"
+	};
+
+	var FONDOS_AL_REVES = {
+		blue: "azul",
+		cyan: "azul",
+		green: "verde",
+		yellow: "amarillo",
+		orange: "naranja",
+		red: "rojo",
+		magenta: "violeta",
+		pink: "rosa",
+		gray: "gris",
+		light_gray: "gris"
+	};
+
 	var CERCA = 40;
 
 	function esc(s) {
@@ -85,7 +109,10 @@ var uxf = (function () {
 			"  <zoom_level>10</zoom_level>\n";
 
 		(cosas || []).forEach(function (c) {
-			t += bloque(c.k === "nota" ? "UMLNote" : "UMLClass", c.x, c.y, c.w, c.h, c.txt || "", "");
+			var panel = c.txt || "";
+			var fondo = FONDOS[c.col];
+			if (fondo) { panel += (panel ? "\n" : "") + "bg=" + fondo; }
+			t += bloque(c.k === "nota" ? "UMLNote" : "UMLClass", c.x, c.y, c.w, c.h, panel, "");
 		});
 
 		(lineas || []).forEach(function (l) {
@@ -231,7 +258,8 @@ var uxf = (function () {
 				y: Math.max(0, Math.round(y / 10) * 10),
 				w: Math.max(nota ? 90 : 120, Math.round(w / 10) * 10),
 				h: Math.max(50, Math.round(h / 10) * 10),
-				txt: textoLimpio(panel)
+				txt: textoLimpio(panel),
+				col: FONDOS_AL_REVES[atributo(panel, "bg").toLowerCase()] || ""
 			});
 		});
 

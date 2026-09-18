@@ -21,6 +21,18 @@ var uml = (function () {
 
 	var SIGNOS = { "+": "public", "-": "private", "#": "protected", "~": "package" };
 
+	var COLORES = [
+		{ id: "", nombre: "Sin color" },
+		{ id: "azul", nombre: "Azul" },
+		{ id: "verde", nombre: "Verde" },
+		{ id: "amarillo", nombre: "Amarillo" },
+		{ id: "naranja", nombre: "Naranja" },
+		{ id: "rojo", nombre: "Rojo" },
+		{ id: "violeta", nombre: "Violeta" },
+		{ id: "rosa", nombre: "Rosa" },
+		{ id: "gris", nombre: "Gris" }
+	];
+
 	var elementos = [];
 	var relaciones = [];
 	var memoria = [];
@@ -54,6 +66,15 @@ var uml = (function () {
 	function porId(id) {
 		for (var i = 0; i < elementos.length; i++) { if (elementos[i].id === id) { return elementos[i]; } }
 		return null;
+	}
+
+	function colorValido(c) {
+		return COLORES.some(function (x) { return x.id && x.id === c; }) ? c : "";
+	}
+
+	function claseDeColor(c) {
+		var v = colorValido(c);
+		return v ? " uml-col-" + v : "";
 	}
 
 	function nombreVinculo(t) {
@@ -257,7 +278,10 @@ var uml = (function () {
 	function duplicar() {
 		var c = elegido ? porId(elegido) : null;
 		if (!c) { return false; }
-		var copia = { id: util.nuevoId("u"), k: c.k, x: c.x + 20, y: c.y + 20, w: c.w, h: c.h, txt: c.txt };
+		var copia = {
+			id: util.nuevoId("u"), k: c.k, x: c.x + 20, y: c.y + 20,
+			w: c.w, h: c.h, txt: c.txt, col: colorValido(c.col)
+		};
 		elementos.push(copia);
 		elegido = copia.id;
 		util.marcarCambios();
@@ -551,6 +575,7 @@ var uml = (function () {
 		elementos.forEach(function (c) {
 			var d = document.createElement("div");
 			d.className = "uml-caja" + (c.k === "nota" ? " uml-nota" : "") +
+				claseDeColor(c.col) +
 				(elegido === c.id ? " uml-elegida" : "") +
 				(desde === c.id ? " uml-origen" : "");
 			d.setAttribute("data-uml-id", c.id);
@@ -573,9 +598,47 @@ var uml = (function () {
 		if (lv) { lv.textContent = Math.round(nivelZoom * 100) + "%"; }
 	}
 
+	function ponerColor(id) {
+		var c = elegido ? porId(elegido) : null;
+		if (!c) { return; }
+		var v = colorValido(id);
+		if ((c.col || "") === v) { return; }
+		c.col = v;
+		util.marcarCambios();
+		pintar();
+		anotarYa();
+	}
+
+	function armarColores() {
+		var zona = document.getElementById("umlColores");
+		if (!zona) { return; }
+		COLORES.forEach(function (x) {
+			var b = document.createElement("button");
+			b.type = "button";
+			b.className = "uml-color" + (x.id ? " uml-col-" + x.id : " uml-color-nada");
+			b.title = x.nombre;
+			b.setAttribute("aria-label", x.nombre);
+			b.setAttribute("data-uml-color", x.id);
+			b.addEventListener("click", function () { ponerColor(x.id); });
+			zona.appendChild(b);
+		});
+	}
+
+	function pintarColores() {
+		var zona = document.getElementById("umlColores");
+		if (!zona) { return; }
+		var c = elegido ? porId(elegido) : null;
+		var actual = c ? colorValido(c.col) : "";
+		zona.classList.toggle("uml-colores-off", !c);
+		util.qq(".uml-color", zona).forEach(function (b) {
+			b.classList.toggle("uml-color-on", !!c && b.getAttribute("data-uml-color") === actual);
+		});
+	}
+
 	function pintarPanel() {
 		var t = panel();
 		var cartel = document.getElementById("umlQue");
+		pintarColores();
 		if (!t) { return; }
 		var c = elegido ? porId(elegido) : null;
 		var l = elegido ? lineaPorId(elegido) : null;
@@ -1171,6 +1234,8 @@ var uml = (function () {
 				zona.appendChild(b);
 			});
 		}
+
+		armarColores();
 
 		var t = panel();
 		if (t) {
