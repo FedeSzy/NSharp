@@ -5,12 +5,12 @@ var tema = (function () {
 
 	var LISTA = [
 		{ id: "auto", label: "Automático", tinta: "#3f51b5", fondo: "#171a21" },
-		{ id: "indigo", label: "Claro", tinta: "#3f51b5", fondo: "#eceff4" },
+		{ id: "claro", label: "Claro", tinta: "#3f51b5", fondo: "#eceff4" },
 		{ id: "dark", label: "Oscuro", tinta: "#7d8cff", fondo: "#21252e" },
-		{ id: "midnight", label: "Negro", tinta: "#34d3e0", fondo: "#05070d" },
-		{ id: "forest", label: "Verde", tinta: "#00796b", fondo: "#dcf1ed" },
-		{ id: "amber", label: "Naranja", tinta: "#b4581a", fondo: "#fdeade" },
-		{ id: "rose", label: "Rosa", tinta: "#ad1457", fondo: "#fce4ef" }
+		{ id: "negro", label: "Negro", tinta: "#34d3e0", fondo: "#05070d" },
+		{ id: "verde", label: "Verde", tinta: "#00796b", fondo: "#dcf1ed" },
+		{ id: "naranja", label: "Naranja", tinta: "#b4581a", fondo: "#fdeade" },
+		{ id: "rosa", label: "Rosa", tinta: "#ad1457", fondo: "#fce4ef" }
 	];
 
 	var actual = "auto";

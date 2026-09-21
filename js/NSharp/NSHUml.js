@@ -354,6 +354,90 @@ var uml = (function () {
 		return { x: r.cx + dx * s, y: r.cy + dy * s };
 	}
 
+	function aGrilla(v) { return Math.max(0, Math.round(v / GRILLA) * GRILLA); }
+
+	function quiebres(l) { return (l && l.q instanceof Array) ? l.q : []; }
+
+	function limpiarQuiebres(v) {
+		return (v instanceof Array ? v : []).map(function (p) {
+			var x = Number(p && p.x), y = Number(p && p.y);
+			if (isNaN(x) || isNaN(y)) { return null; }
+			return { x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)) };
+		}).filter(Boolean);
+	}
+
+	function trazado(l) {
+		var a = porId(l.de), b = porId(l.a);
+		if (!a || !b) { return null; }
+		var ra = marco(a), rb = marco(b);
+		var qs = quiebres(l);
+		var haciaA = qs.length ? qs[0] : { x: rb.cx, y: rb.cy };
+		var haciaB = qs.length ? qs[qs.length - 1] : { x: ra.cx, y: ra.cy };
+		return [borde(ra, haciaA.x, haciaA.y)]
+			.concat(qs.map(function (p) { return { x: p.x, y: p.y }; }))
+			.concat([borde(rb, haciaB.x, haciaB.y)]);
+	}
+
+	function angulo(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
+
+	function ruta(pts) {
+		return pts.map(function (p, i) { return (i ? " L" : "M") + p.x + "," + p.y; }).join("");
+	}
+
+	function medioDe(pts) {
+		var total = 0, i;
+		for (i = 1; i < pts.length; i++) { total += distancia(pts[i - 1], pts[i]); }
+		var meta = total / 2, andado = 0;
+		for (i = 1; i < pts.length; i++) {
+			var d = distancia(pts[i - 1], pts[i]);
+			if (andado + d >= meta) {
+				var f = d ? (meta - andado) / d : 0;
+				return {
+					x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f,
+					y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f
+				};
+			}
+			andado += d;
+		}
+		return { x: pts[0].x, y: pts[0].y };
+	}
+
+	function aLaRecta(p, a, b) {
+		var dx = b.x - a.x, dy = b.y - a.y;
+		var largo = dx * dx + dy * dy;
+		var t = largo ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / largo : 0;
+		t = Math.max(0, Math.min(1, t));
+		return distancia(p, { x: a.x + dx * t, y: a.y + dy * t });
+	}
+
+	function partir(id, seg, p) {
+		var l = lineaPorId(id);
+		if (!l) { return; }
+		if (!(l.q instanceof Array)) { l.q = []; }
+		var i = Math.max(0, Math.min(l.q.length, seg));
+		l.q.splice(i, 0, { x: aGrilla(p.x), y: aGrilla(p.y) });
+		elegido = l.id;
+		util.marcarCambios();
+		pintar();
+		anotarYa();
+	}
+
+	function sacarQuiebre(id, i) {
+		var l = lineaPorId(id);
+		if (!l || !quiebres(l)[i]) { return; }
+		l.q.splice(i, 1);
+		elegido = l.id;
+		util.marcarCambios();
+		pintar();
+		anotarYa();
+	}
+
+	function podarQuiebre(l, i) {
+		var pts = trazado(l);
+		if (!pts || !quiebres(l)[i] || pts.length < 3) { return; }
+		if (aLaRecta(pts[i + 1], pts[i], pts[i + 2]) <= GRILLA / 2) { l.q.splice(i, 1); }
+	}
+
 	function triangulo(p, ang, t) {
 		var a = ang + Math.PI - 0.42, b = ang + Math.PI + 0.42;
 		return "M" + p.x + "," + p.y +
@@ -464,13 +548,15 @@ var uml = (function () {
 		s.setAttribute("height", ALTO);
 		s.setAttribute("viewBox", "0 0 " + ANCHO + " " + ALTO);
 
+		var manijas = [];
+
 		relaciones.forEach(function (l) {
-			var a = porId(l.de), b = porId(l.a);
-			if (!a || !b) { return; }
-			var ra = marco(a), rb = marco(b);
-			var p1 = borde(ra, rb.cx, rb.cy);
-			var p2 = borde(rb, ra.cx, ra.cy);
-			var ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+			var pts = trazado(l);
+			if (!pts) { return; }
+			var n = pts.length;
+			var p1 = pts[0], p2 = pts[n - 1];
+			var angIni = angulo(pts[0], pts[1]);
+			var angFin = angulo(pts[n - 2], pts[n - 1]);
 			var d1 = p1, d2 = p2;
 			var puntos = "";
 			var vacio = "var(--nsh-surface)";
@@ -478,38 +564,55 @@ var uml = (function () {
 			var extra = [];
 
 			if (l.t === "her" || l.t === "imp") {
-				extra.push(nodo("path", { d: triangulo(p2, ang, 14), fill: vacio, stroke: tinta, "stroke-width": 1.6 }));
-				d2 = { x: p2.x - Math.cos(ang) * 13, y: p2.y - Math.sin(ang) * 13 };
+				extra.push(nodo("path", { d: triangulo(p2, angFin, 14), fill: vacio, stroke: tinta, "stroke-width": 1.6 }));
+				d2 = { x: p2.x - Math.cos(angFin) * 13, y: p2.y - Math.sin(angFin) * 13 };
 			} else if (l.t === "dir" || l.t === "dep") {
-				extra.push(nodo("path", { d: flecha(p2, ang, 11), fill: "none", stroke: tinta, "stroke-width": 1.6 }));
+				extra.push(nodo("path", { d: flecha(p2, angFin, 11), fill: "none", stroke: tinta, "stroke-width": 1.6 }));
 			}
 			if (l.t === "agr" || l.t === "com") {
-				var back = ang + Math.PI;
+				var back = angIni + Math.PI;
 				extra.push(nodo("path", {
 					d: rombo(p1, back, 16),
 					fill: l.t === "com" ? tinta : vacio,
 					stroke: tinta, "stroke-width": 1.6
 				}));
-				d1 = { x: p1.x + Math.cos(ang) * 16, y: p1.y + Math.sin(ang) * 16 };
+				d1 = { x: p1.x + Math.cos(angIni) * 16, y: p1.y + Math.sin(angIni) * 16 };
 			}
 
-			puntos = "M" + d1.x + "," + d1.y + " L" + d2.x + "," + d2.y;
+			var cuerpo2 = [d1].concat(pts.slice(1, n - 1)).concat([d2]);
+			puntos = ruta(cuerpo2);
 			var trazo = nodo("path", {
 				d: puntos, fill: "none", stroke: tinta, "stroke-width": 1.6,
+				"stroke-linejoin": "round",
 				"stroke-dasharray": (l.t === "dep" || l.t === "imp") ? "7 5" : "none"
 			});
 			if (elegido === l.id) { trazo.setAttribute("stroke", "var(--nsh-accent)"); }
 			s.appendChild(trazo);
-			extra.forEach(function (n) {
-				if (elegido === l.id) { n.setAttribute("stroke", "var(--nsh-accent)"); }
-				s.appendChild(n);
+			extra.forEach(function (n2) {
+				if (elegido === l.id) { n2.setAttribute("stroke", "var(--nsh-accent)"); }
+				s.appendChild(n2);
 			});
 
-			var golpe = nodo("path", {
-				d: puntos, fill: "none", stroke: "transparent", "stroke-width": 14,
-				"class": "uml-golpe", "data-uml-rel": l.id
-			});
-			s.appendChild(golpe);
+			for (var i = 1; i < n; i++) {
+				s.appendChild(nodo("path", {
+					d: "M" + pts[i - 1].x + "," + pts[i - 1].y + " L" + pts[i].x + "," + pts[i].y,
+					fill: "none", stroke: "transparent", "stroke-width": 14,
+					"class": "uml-golpe", "data-uml-rel": l.id, "data-uml-seg": i - 1
+				}));
+			}
+
+			if (elegido === l.id) {
+				quiebres(l).forEach(function (p, j) {
+					manijas.push(nodo("circle", {
+						cx: p.x, cy: p.y, r: 10, "class": "uml-punto-golpe",
+						"data-uml-rel": l.id, "data-uml-pto": j
+					}));
+					manijas.push(nodo("circle", {
+						cx: p.x, cy: p.y, r: 5.5, "class": "uml-punto",
+						"data-uml-rel": l.id, "data-uml-pto": j
+					}));
+				});
+			}
 
 			if (l.txt) {
 				var renglones = l.txt.split(/\r?\n/);
@@ -523,7 +626,10 @@ var uml = (function () {
 					else { centro.push(s2); }
 				});
 
-				var mx = (d1.x + d2.x) / 2, my = (d1.y + d2.y) / 2;
+				var medio = medioDe(cuerpo2);
+				var mx = medio.x, my = medio.y;
+				var sigue = cuerpo2[1];
+				var previo = cuerpo2[cuerpo2.length - 2];
 
 				if (arriba) {
 					var tA = nodo("text", { x: mx, y: my - 6, "text-anchor": "middle", "class": "uml-rotulo" });
@@ -536,7 +642,7 @@ var uml = (function () {
 					s.appendChild(tC);
 				}
 				if (izq) {
-					var haciaDer = d2.x >= d1.x;
+					var haciaDer = sigue.x >= d1.x;
 					var xIzq = d1.x + (haciaDer ? INSET_ROTULO : -INSET_ROTULO);
 					var ancIzq = haciaDer ? "start" : "end";
 					var tI = nodo("text", { x: xIzq, y: d1.y + 14, "text-anchor": ancIzq, "class": "uml-rotulo" });
@@ -544,7 +650,7 @@ var uml = (function () {
 					s.appendChild(tI);
 				}
 				if (der) {
-					var haciaIzq = d2.x >= d1.x;
+					var haciaIzq = d2.x >= previo.x;
 					var xDer = d2.x - (haciaIzq ? INSET_ROTULO : -INSET_ROTULO);
 					var ancDer = haciaIzq ? "end" : "start";
 					var tD = nodo("text", { x: xDer, y: d2.y + 14, "text-anchor": ancDer, "class": "uml-rotulo" });
@@ -553,6 +659,8 @@ var uml = (function () {
 				}
 			}
 		});
+
+		manijas.forEach(function (n) { s.appendChild(n); });
 	}
 
 	function cuerpo(c) {
@@ -670,7 +778,42 @@ var uml = (function () {
 		var casa = lienzoUml();
 		if (!casa) { return; }
 		var rel = e.target.getAttribute && e.target.getAttribute("data-uml-rel");
-		if (rel) { elegir(rel); return; }
+		if (rel) {
+			var pto = e.target.getAttribute("data-uml-pto");
+			var seg = e.target.getAttribute("data-uml-seg");
+			var cual = pto !== null ? "p" + pto : "s" + seg;
+			var cuando = Date.now();
+			var repetido = ultimoToque.id === rel + cual && (cuando - ultimoToque.t) < 400;
+			ultimoToque = { id: rel + cual, t: cuando };
+			e.preventDefault();
+
+			if (pto !== null) {
+				var i = parseInt(pto, 10);
+				if (e.shiftKey || repetido) {
+					ultimoToque = { id: null, t: 0 };
+					sacarQuiebre(rel, i);
+					return;
+				}
+				var l = lineaPorId(rel);
+				var q = quiebres(l)[i];
+				if (!q) { return; }
+				elegir(rel);
+				var pq = puntoEnTela(e);
+				arrastreActual = { modo: "quiebre", l: l, i: i, x0: pq.x, y0: pq.y, ax: q.x, ay: q.y };
+				window.addEventListener("pointermove", alMover, true);
+				window.addEventListener("pointerup", alSoltar, true);
+				window.addEventListener("pointercancel", alSoltar, true);
+				return;
+			}
+
+			if (e.shiftKey || repetido) {
+				ultimoToque = { id: null, t: 0 };
+				partir(rel, parseInt(seg, 10) || 0, puntoEnTela(e));
+				return;
+			}
+			elegir(rel);
+			return;
+		}
 
 		var caja = e.target.closest ? e.target.closest(".uml-caja") : null;
 		if (!caja) {
@@ -729,8 +872,18 @@ var uml = (function () {
 		if (!arrastreActual) { return; }
 		var p = puntoEnTela(e);
 		var dx = p.x - arrastreActual.x0, dy = p.y - arrastreActual.y0;
-		var c = arrastreActual.c;
 		if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { ultimoToque = { id: null, t: 0 }; }
+		if (arrastreActual.modo === "quiebre") {
+			var q = quiebres(arrastreActual.l)[arrastreActual.i];
+			if (q) {
+				q.x = aGrilla(arrastreActual.ax + dx);
+				q.y = aGrilla(arrastreActual.ay + dy);
+			}
+			dibujarLineas();
+			e.preventDefault();
+			return;
+		}
+		var c = arrastreActual.c;
 		if (arrastreActual.modo === "redimensionar") {
 			c.w = Math.max(90, Math.round((arrastreActual.aw + dx) / GRILLA) * GRILLA);
 			c.h = Math.max(50, Math.round((arrastreActual.ah + dy) / GRILLA) * GRILLA);
@@ -754,6 +907,7 @@ var uml = (function () {
 		window.removeEventListener("pointerup", alSoltar, true);
 		window.removeEventListener("pointercancel", alSoltar, true);
 		var hubo = !!arrastreActual;
+		if (hubo && arrastreActual.modo === "quiebre") { podarQuiebre(arrastreActual.l, arrastreActual.i); }
 		if (hubo) { util.marcarCambios(); }
 		arrastreActual = null;
 		pintar();
@@ -1394,7 +1548,8 @@ var uml = (function () {
 					de: l.de,
 					a: l.a,
 					t: nombreVinculo(l.t) === "Relación" ? "aso" : l.t,
-					txt: typeof l.txt === "string" ? l.txt : ""
+					txt: typeof l.txt === "string" ? l.txt : "",
+					q: limpiarQuiebres(l.q)
 				};
 			})
 			.filter(function (l) { return porId(l.de) && porId(l.a); });

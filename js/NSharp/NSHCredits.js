@@ -7,7 +7,7 @@ var creditos = (function () {
 	];
 
 	var NUEVOS = [
-		{ name: "Federico Szymsiowicz" }
+		{ name: "Federico Szymsiowicz", github: "FedeSzy"}
 	];
 
 	function fila(p) {
@@ -29,14 +29,14 @@ var creditos = (function () {
 		v.id = "nshCredits";
 		v.innerHTML = '<div class="nsh-credits-card">' +
 			'<img src="img/nsharp-logo-indigo.png" alt="NS Sharp" class="nsh-credits-logo" />' +
-			'<p class="nsh-credits-lead">Editor de diagramas de Nassi-Shneiderman extendidos' +
-			' para las materias de programación de ORT.</p>' +
-			'<h4>NS Plus, la base de este proyecto</h4>' +
+			'<p class="nsh-credits-lead">Editores de diagramas de Nassi-Shneiderman y UML' +
+			' para las materias de programación y TI de ORT.</p>' +
+			'<h4>NS Plus</h4>' +
 			"<ul>" + VIEJOS.map(fila).join("") + "</ul>" +
 			'<h4>NS Sharp</h4>' +
 			"<ul>" + NUEVOS.map(fila).join("") + "</ul>" +
-			'<p class="nsh-credits-foot">Los archivos <b>.nsplus</b> siguen siendo compatibles ' +
-			"entre las dos versiones.</p>" +
+			'<p class="nsh-credits-foot">Los archivos <b>.nsplus</b> y <b>.uxl</b> son compatibles ' +
+			"con nsplus y UMLetino.</p>" +
 			'<button type="button" class="nsh-credits-close">Cerrar</button>' +
 			"</div>";
 		v.addEventListener("click", function (e) {

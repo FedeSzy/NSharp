@@ -41,7 +41,8 @@ var atajos = (function () {
 		["Mover el plano", "Espacio+arrastrar  o  botón del medio"],
 		["Zoom", "Ctrl+rueda  o  pellizco"],
 		["Zoom 100% / Ver todo", "Ctrl+0  /  Ctrl+9"],
-		["Cancelar o deseleccionar", "Esc"]
+		["Cancelar o deseleccionar", "Esc"],
+		["Agregar vértice a una flecha", "Doble click o Shift+Click"]
 	];
 
 	function tabla(filas) {

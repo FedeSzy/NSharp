@@ -229,6 +229,20 @@ body.nsh-uml-on #buttonOpenBlocks {
 	cursor: pointer;
 }
 
+.uml-punto-golpe {
+	fill: transparent;
+	pointer-events: all;
+	cursor: move;
+}
+
+.uml-punto {
+	fill: var(--nsh-surface);
+	stroke: var(--nsh-accent);
+	stroke-width: 2;
+	pointer-events: all;
+	cursor: move;
+}
+
 .uml-rotulo {
 	font-family: system-ui, sans-serif;
 	font-size: 11px;
@@ -487,6 +501,14 @@ body.nsh-uml-pan #umlScroll * {
 
 	.uml-golpe {
 		stroke-width: 26px;
+	}
+
+	.uml-punto-golpe {
+		r: 18px;
+	}
+
+	.uml-punto {
+		r: 7.5px;
 	}
 
 	#umlText {

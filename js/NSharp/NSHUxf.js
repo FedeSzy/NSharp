@@ -118,14 +118,21 @@ var uxf = (function () {
 		(lineas || []).forEach(function (l) {
 			var a = porId(cosas, l.de), b = porId(cosas, l.a);
 			if (!a || !b) { return; }
-			var p1 = borde(marco(a), b.x + b.w / 2, b.y + b.h / 2);
-			var p2 = borde(marco(b), a.x + a.w / 2, a.y + a.h / 2);
-			var x = Math.min(p1.x, p2.x) - 10;
-			var y = Math.min(p1.y, p2.y) - 10;
+			var ra = marco(a), rb = marco(b);
+			var qs = (l.q instanceof Array) ? l.q : [];
+			var haciaA = qs.length ? qs[0] : { x: rb.cx, y: rb.cy };
+			var haciaB = qs.length ? qs[qs.length - 1] : { x: ra.cx, y: ra.cy };
+			var pts = [borde(ra, haciaA.x, haciaA.y)]
+				.concat(qs.map(function (p) { return { x: p.x, y: p.y }; }))
+				.concat([borde(rb, haciaB.x, haciaB.y)]);
+			var xs = pts.map(function (p) { return p.x; });
+			var ys = pts.map(function (p) { return p.y; });
+			var x = Math.min.apply(null, xs) - 10;
+			var y = Math.min.apply(null, ys) - 10;
 			var panel = panelDeRelacion(l);
-			var puntos = un(p1.x - x) + ";" + un(p1.y - y) + ";" + un(p2.x - x) + ";" + un(p2.y - y);
+			var puntos = pts.map(function (p) { return un(p.x - x) + ";" + un(p.y - y); }).join(";");
 			t += bloque("Relation", x, y,
-				Math.abs(p2.x - p1.x) + 20, Math.abs(p2.y - p1.y) + 20, panel, puntos);
+				Math.max.apply(null, xs) - x + 10, Math.max.apply(null, ys) - y + 10, panel, puntos);
 		});
 
 		return t + "</diagram>\n";
@@ -242,11 +249,9 @@ var uxf = (function () {
 				var v = (hijo(el, "additional_attributes") || "").split(";")
 					.map(parseFloat).filter(function (n) { return !isNaN(n); });
 				if (v.length < 4) { return; }
-				crudas.push({
-					panel: panel,
-					p1: { x: x + v[0], y: y + v[1] },
-					p2: { x: x + v[v.length - 2], y: y + v[v.length - 1] }
-				});
+				var pts = [];
+				for (var i = 0; i + 1 < v.length; i += 2) { pts.push({ x: x + v[i], y: y + v[i + 1] }); }
+				crudas.push({ panel: panel, pts: pts });
 				return;
 			}
 
@@ -265,16 +270,21 @@ var uxf = (function () {
 
 		var lineas = [];
 		crudas.forEach(function (r) {
-			var a = cajaCerca(cosas, r.p1);
-			var b = cajaCerca(cosas, r.p2);
+			var a = cajaCerca(cosas, r.pts[0]);
+			var b = cajaCerca(cosas, r.pts[r.pts.length - 1]);
 			if (!a || !b || a === b) { return; }
 			var q = tipoDeLt(r.panel);
+			var medio = r.pts.slice(1, -1).map(function (p) {
+				return { x: Math.max(0, Math.round(p.x / 10) * 10), y: Math.max(0, Math.round(p.y / 10) * 10) };
+			});
+			if (q.invertir) { medio.reverse(); }
 			lineas.push({
 				id: util.nuevoId("r"),
 				de: (q.invertir ? b : a).id,
 				a: (q.invertir ? a : b).id,
 				t: q.t,
-				txt: textoDeRelacion(r.panel, q.invertir)
+				txt: textoDeRelacion(r.panel, q.invertir),
+				q: medio
 			});
 		});
 
