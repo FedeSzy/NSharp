@@ -41,7 +41,31 @@ var buscador = (function () {
 	var salio = [];
 	var marcado = -1;
 
+	var SPIDERMAN_GIF = "img/spiderman.gif";
+
 	function infoDelTipo(t) { return COSAS[t] || { label: t, keys: t }; }
+
+	function esSpiderman(txt) {
+		return util.sinAcentos(txt).trim().toLowerCase() === "spiderman";
+	}
+
+	function inyectarEstiloSpiderman() {
+		if (document.getElementById("nsh-spiderman-style")) { return; }
+		var s = document.createElement("style");
+		s.id = "nsh-spiderman-style";
+		s.textContent =
+			".nsh-spiderman-easter-egg{position:fixed;top:20%;left:-220px;width:200px;height:auto;z-index:99999;pointer-events:none;animation:nsh-spiderman-cruzar 3s linear forwards;}" +
+			"@keyframes nsh-spiderman-cruzar{from{left:-220px;}to{left:100vw;}}";
+		document.head.appendChild(s);
+	}
+
+	function tiroDeSpiderman() {
+		var img = document.createElement("img");
+		img.src = SPIDERMAN_GIF;
+		img.className = "nsh-spiderman-easter-egg";
+		document.body.appendChild(img);
+		img.addEventListener("animationend", function () { img.remove(); });
+	}
 
 	function campoBusqueda() { return document.getElementById("nshFindInput"); }
 
@@ -279,7 +303,14 @@ var buscador = (function () {
 	}
 
 	function buscarAhora() {
-		salio = buscar(campoBusqueda().value);
+		var txt = campoBusqueda().value;
+		if (esSpiderman(txt)) {
+			tiroDeSpiderman();
+			salio = [];
+			cerrar();
+			return;
+		}
+		salio = buscar(txt);
 		pintar();
 	}
 
@@ -319,6 +350,7 @@ var buscador = (function () {
 	function iniciar() {
 		var i = campoBusqueda();
 		if (!i) { return; }
+		inyectarEstiloSpiderman();
 		i.addEventListener("input", util.retrasar(buscarAhora, 120));
 		i.addEventListener("keydown", alTeclear);
 		i.addEventListener("focus", function () {
