@@ -4,7 +4,12 @@ var tema = (function () {
 	var ATRIB = "data-nsh-theme";
 
 	var LISTA = [
-		{ id: "auto", label: "Automático", tinta: "#3f51b5", fondo: "#171a21" },
+		{
+			id: "auto",
+			label: "Automático",
+			tinta: window.matchMedia("(prefers-color-scheme: dark)").matches ? "#7d8cff" : "#21252e",
+			fondo: window.matchMedia("(prefers-color-scheme: dark)").matches ? "#3f51b5" : "#eceff4"
+		},
 		{ id: "claro", label: "Claro", tinta: "#3f51b5", fondo: "#eceff4" },
 		{ id: "dark", label: "Oscuro", tinta: "#7d8cff", fondo: "#21252e" },
 		{ id: "negro", label: "Negro", tinta: "#34d3e0", fondo: "#05070d" },
