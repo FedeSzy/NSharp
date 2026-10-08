@@ -27,6 +27,7 @@ var util = (function () {
 
 	o.listo = false;
 	o.alPintar = function () { };
+	o.alCambiar = function () { };
 
 	function q(s, r) { return (r || document).querySelector(s); }
 
@@ -160,6 +161,7 @@ var util = (function () {
 	function actualizarTitulo() {
 		var n = (typeof proy !== "undefined" && proy) ? (proy.name || "").trim() : "";
 		document.title = (!n || n === "Proyecto sin título") ? TIT : n + " - NS Sharp";
+		if (typeof solapas !== "undefined" && solapas.pintar) { solapas.pintar(); }
 	}
 
 	function aviso(txt, ms) {
@@ -182,9 +184,11 @@ var util = (function () {
 		bt.title = sucio
 			? "Hay cambios sin guardar - Guardar como .nsplus (Ctrl+S)"
 			: "Guardar como .nsplus (Ctrl+S)";
+		if (typeof solapas !== "undefined" && solapas.pintar) { solapas.pintar(); }
 	}
 
 	function marcarCambios() {
+		o.alCambiar();
 		if (sucio) { return; }
 		sucio = true;
 		pintarSucio();
@@ -192,6 +196,11 @@ var util = (function () {
 
 	function marcarGuardado() {
 		sucio = false;
+		pintarSucio();
+	}
+
+	function ponerCambios(si) {
+		sucio = !!si;
 		pintarSucio();
 	}
 
@@ -212,6 +221,12 @@ var util = (function () {
 			window.clearTimeout(t);
 			t = window.setTimeout(function () { fn.apply(yo, args); }, ms);
 		};
+	}
+
+	function escapar(txt) {
+		return String(txt === null || txt === undefined ? "" : txt)
+			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 	}
 
 	function sinAcentos(txt) {
@@ -241,11 +256,13 @@ var util = (function () {
 	o.aviso = aviso;
 	o.marcarCambios = marcarCambios;
 	o.marcarGuardado = marcarGuardado;
+	o.ponerCambios = ponerCambios;
 	o.hayCambios = hayCambios;
 	o.escribiendo = escribiendo;
 	o.nuevoId = nuevoId;
 	o.retrasar = retrasar;
 	o.sinAcentos = sinAcentos;
+	o.escapar = escapar;
 
 	return o;
 }());

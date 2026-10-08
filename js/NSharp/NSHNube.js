@@ -1,0 +1,849 @@
+var nube = (function () {
+	var o = {};
+
+	var ESPERA = 1200;
+	var LATIDO = 25000;
+	var VIGENCIA = 70000;
+	var TANDA = 450;
+	var COLORES = ["#e53935", "#8e24aa", "#3949ab", "#039be5", "#00897b", "#7cb342", "#f4511e", "#6d4c41", "#d81b60", "#5e35b1"];
+
+	var presente = { e: null, firma: "", t: 0, sub: null };
+	var gente = {};
+	var firmaGente = "";
+	var pedido = null;
+
+	function db() { return cuenta.base(); }
+
+	function yo() { return cuenta.usuario(); }
+
+	function ahora() { return firebase.firestore.FieldValue.serverTimestamp(); }
+
+	function refProyecto(id) { return db().collection("proyectos").doc(id); }
+
+	function esActiva(e) { return !!e && e === solapas.actual(); }
+
+	function nuevoEstado(id, datos) {
+		return {
+			id: id,
+			datos: datos || {},
+			base: {},
+			remoto: {},
+			subs: [],
+			reloj: null,
+			subiendo: 0,
+			error: null,
+			atrasado: false
+		};
+	}
+
+	function rolDe(e) {
+		if (!e || !e.nube) { return null; }
+		var x = e.nube.datos || {};
+		var u = yo();
+		var c = cuenta.correo();
+		if (u && x.dueno === u.uid) { return "dueno"; }
+		if (u && ((x.editores || []).indexOf(c) !== -1 || x.enlace === "editor")) { return "editor"; }
+		if ((c && (x.lectores || []).indexOf(c) !== -1) || x.enlace === "lector" || x.enlace === "editor") { return "lector"; }
+		return null;
+	}
+
+	function puedeEditar(e) {
+		var r = rolDe(e);
+		return !!yo() && (r === "dueno" || r === "editor");
+	}
+
+	function textoP(x) {
+		return JSON.stringify({ nombre: (x.nombre || "").trim() || SIN_NOMBRE, carpetas: x.carpetas || "[]" });
+	}
+
+	function textoMetodo(x) {
+		return JSON.stringify({
+			clase: x.clase || "",
+			nombre: x.nombre || "",
+			code: x.code || "",
+			pos: typeof x.pos === "number" ? x.pos : 0,
+			carpeta: x.carpeta || ""
+		});
+	}
+
+	function textoUml(x) {
+		return JSON.stringify({ k: x.k, n: typeof x.n === "number" ? x.n : 0, d: x.d || "null" });
+	}
+
+	function claveUml(prefijo, id) {
+		return "u/" + prefijo + "-" + encodeURIComponent(String(id));
+	}
+
+	function fotoLocal(e) {
+		var r = {};
+		var activa = esActiva(e);
+		if (activa && lienzo.actualDiagram) { lienzo.refresh(); }
+		var mets = solapas.lista(e);
+		var carpetas = activa ? clases.paraGuardar(mets) : e.carpetas;
+		var mapa = carpetas && carpetas.map instanceof Array ? carpetas.map : [];
+		mets.forEach(function (d, i) {
+			if (!d.nube) { d.nube = util.nuevoId("m"); }
+			r["m/" + d.nube] = textoMetodo({
+				clase: d.theClass, nombre: d.name, code: d.code, pos: i, carpeta: mapa[i] || ""
+			});
+		});
+		var folders = (carpetas && carpetas.folders instanceof Array) ? carpetas.folders.map(function (c) {
+			return { id: c.id, name: c.name, parent: c.parent || null };
+		}) : [];
+		r.p = textoP({ nombre: e.proy.name, carpetas: JSON.stringify(folders) });
+		var dib = activa ? uml.guardar() : e.dibujo;
+		if (dib) {
+			(dib.cosas || []).forEach(function (c, i) {
+				r[claveUml("c", c.id)] = textoUml({ k: "c", n: i, d: JSON.stringify(c) });
+			});
+			(dib.lineas || []).forEach(function (l, i) {
+				r[claveUml("l", l.id)] = textoUml({ k: "l", n: i, d: JSON.stringify(l) });
+			});
+			if (dib.mem && dib.mem.length) {
+				r["u/mem"] = textoUml({ k: "m", n: 0, d: JSON.stringify(dib.mem) });
+			}
+		}
+		return r;
+	}
+
+	function dibujoDesde(mapa) {
+		var cosas = [], lineas = [], mem = [];
+		Object.keys(mapa).forEach(function (k) {
+			if (k.indexOf("u/") !== 0) { return; }
+			var x = JSON.parse(mapa[k]);
+			var d = JSON.parse(x.d);
+			if (x.k === "c") { cosas.push({ n: x.n, d: d }); }
+			else if (x.k === "l") { lineas.push({ n: x.n, d: d }); }
+			else if (x.k === "m" && d instanceof Array) { mem = d; }
+		});
+		function ordenar(v) {
+			return v.sort(function (a, b) { return a.n - b.n; }).map(function (x) { return x.d; });
+		}
+		if (!cosas.length && !lineas.length && !mem.length) { return null; }
+		return { v: 1, cosas: ordenar(cosas), lineas: ordenar(lineas), mem: mem };
+	}
+
+	function reconstruir(e, mapa, aplicadas) {
+		var activa = esActiva(e);
+		var mets = solapas.lista(e);
+		var porNube = {};
+		mets.forEach(function (d) { if (d.nube) { porNube[d.nube] = d; } });
+
+		var filas = [];
+		Object.keys(mapa).forEach(function (k) {
+			if (k.indexOf("m/") !== 0) { return; }
+			var x = JSON.parse(mapa[k]);
+			var mid = k.slice(2);
+			var d = porNube[mid];
+			if (!d) {
+				d = new Metodo(x.clase, x.nombre, x.code);
+				d.nube = mid;
+			} else if (aplicadas[k]) {
+				d.setData(x.clase, x.nombre, x.code);
+			}
+			filas.push({ d: d, pos: x.pos, carpeta: x.carpeta || null, mid: mid });
+		});
+		filas.sort(function (a, b) { return (a.pos - b.pos) || (a.mid < b.mid ? -1 : 1); });
+		var nuevos = filas.map(function (f) { return f.d; });
+
+		mets.forEach(function (d) {
+			if (nuevos.indexOf(d) !== -1) { return; }
+			e.proy.deleteDiagram(d.id);
+			if (activa) {
+				clases.olvidar(d.id);
+				historial.olvidar(d.id);
+			}
+		});
+		nuevos.forEach(function (d) { if (mets.indexOf(d) === -1) { e.proy.addDiagram(d); } });
+		e.proy.setDiagrams(nuevos);
+
+		var p = mapa.p ? JSON.parse(mapa.p) : { nombre: SIN_NOMBRE, carpetas: "[]" };
+		e.proy.name = p.nombre;
+		var folders = JSON.parse(p.carpetas || "[]");
+		var antes = activa ? clases.todas() : ((e.carpetas && e.carpetas.folders) || []);
+		var cerradas = {};
+		antes.forEach(function (c) { if (c.open === false) { cerradas[c.id] = true; } });
+		var datos = folders.length ? {
+			v: 1,
+			folders: folders.map(function (c) {
+				return { id: c.id, name: c.name, parent: c.parent || null, open: !cerradas[c.id] };
+			}),
+			map: filas.map(function (f) { return f.carpeta; })
+		} : null;
+
+		var tocaUml = Object.keys(aplicadas).some(function (k) { return k.indexOf("u/") === 0; });
+		var dib = dibujoDesde(mapa);
+
+		if (!activa) {
+			e.carpetas = datos;
+			e.dibujo = dib;
+			if (e.metodo && nuevos.indexOf(e.metodo) === -1) { e.metodo = null; }
+			solapas.pintar();
+			return;
+		}
+
+		clases.desdeArchivo(datos, nuevos);
+		if (tocaUml) { uml.recibir(dib); }
+		var actual = lienzo.actualDiagram;
+		if (actual && nuevos.indexOf(actual) === -1) { actual = null; lienzo.actualDiagram = null; }
+		if (!actual && nuevos.length) {
+			lienzo.setDiagram(nuevos[0]);
+			historial.reset(nuevos[0]);
+		} else if (!actual) {
+			lienzo.setDiagram(null);
+		} else if (aplicadas["m/" + actual.nube]) {
+			lienzo.setDiagram(actual);
+			historial.reset(actual);
+		}
+		arbol.activar(lienzo.actualDiagram);
+		util.actualizarTitulo();
+	}
+
+	function editandoLienzo() {
+		var a = document.activeElement;
+		if (a && lienzo.container.contains(a) && util.escribiendo(a)) { return true; }
+		return document.body.classList.contains("nsh-dragging");
+	}
+
+	function ocupado(e, k) {
+		if (!esActiva(e)) { return false; }
+		if (k.indexOf("u/") === 0) { return uml.ocupado(); }
+		if (k.indexOf("m/") === 0) {
+			var d = lienzo.actualDiagram;
+			return !!d && "m/" + d.nube === k && editandoLienzo();
+		}
+		return false;
+	}
+
+	function conciliar(e) {
+		var n = e && e.nube;
+		if (!n) { return; }
+		var libre = !puedeEditar(e);
+		var local = null;
+		var aplicadas = {};
+		var hay = false;
+		n.atrasado = false;
+		var claves = Object.keys(n.remoto).concat(Object.keys(n.base).filter(function (k) { return !(k in n.remoto); }));
+		claves.forEach(function (k) {
+			if (n.remoto[k] === n.base[k]) { return; }
+			if (!local) { local = fotoLocal(e); }
+			if (!libre && local[k] !== n.base[k]) { return; }
+			if (ocupado(e, k)) { n.atrasado = true; return; }
+			aplicadas[k] = true;
+			hay = true;
+		});
+		if (!hay) { return; }
+
+		var mapa = {};
+		Object.keys(local).forEach(function (k) { mapa[k] = local[k]; });
+		Object.keys(aplicadas).forEach(function (k) {
+			if (n.remoto[k] === undefined) {
+				delete mapa[k];
+				delete n.base[k];
+			} else {
+				mapa[k] = n.remoto[k];
+				n.base[k] = n.remoto[k];
+			}
+		});
+		reconstruir(e, mapa, aplicadas);
+
+		if (!libre) {
+			var despues = fotoLocal(e);
+			var corre = Object.keys(aplicadas).some(function (k) { return despues[k] !== n.base[k]; });
+			if (corre) { programar(e); }
+		}
+	}
+
+	function operacion(e, k, v) {
+		var ref = refProyecto(e.nube.id);
+		if (k === "p") {
+			var p = JSON.parse(v);
+			return { ref: ref, actualizar: true, datos: { nombre: p.nombre, carpetas: p.carpetas, editado: ahora(), por: cuenta.nombre() } };
+		}
+		var col = k.indexOf("m/") === 0 ? "metodos" : "uml";
+		var doc = ref.collection(col).doc(k.slice(2));
+		if (v === undefined) { return { ref: doc, borrar: true }; }
+		var x = JSON.parse(v);
+		if (col === "metodos") {
+			x.editado = ahora();
+			x.por = cuenta.nombre();
+		}
+		return { ref: doc, datos: x };
+	}
+
+	function escribir(e, ops) {
+		var n = e.nube;
+		var lotes = [];
+		for (var i = 0; i < ops.length; i += TANDA) {
+			var b = db().batch();
+			ops.slice(i, i + TANDA).forEach(function (op) {
+				if (op.borrar) { b.delete(op.ref); }
+				else if (op.actualizar) { b.update(op.ref, op.datos); }
+				else { b.set(op.ref, op.datos); }
+			});
+			lotes.push(b.commit());
+		}
+		n.subiendo++;
+		n.error = null;
+		estado();
+		return Promise.all(lotes).then(function () {
+			n.subiendo--;
+			if (!n.subiendo && !n.reloj) { guardado(e); }
+			estado();
+		}).catch(function (err) {
+			n.subiendo--;
+			n.error = err;
+			console.error(err);
+			estado();
+			if (err && err.code === "permission-denied") {
+				util.aviso("No tenés permiso para editar este proyecto", 3200);
+			}
+		});
+	}
+
+	function guardado(e) {
+		if (esActiva(e)) { util.marcarGuardado(); } else { e.sucio = false; }
+		solapas.pintar();
+	}
+
+	function subir(e) {
+		var n = e && e.nube;
+		if (!n) { return; }
+		if (n.reloj) {
+			window.clearTimeout(n.reloj);
+			n.reloj = null;
+		}
+		if (!puedeEditar(e)) { estado(); return; }
+		if (e.creando) {
+			programar(e);
+			return;
+		}
+		var local = fotoLocal(e);
+		var claves = Object.keys(local).filter(function (k) { return local[k] !== n.base[k]; })
+			.concat(Object.keys(n.base).filter(function (k) { return !(k in local); }));
+		if (!claves.length) {
+			if (!n.subiendo) { guardado(e); }
+			estado();
+			return;
+		}
+		var ops = claves.map(function (k) {
+			var v = local[k];
+			if (v === undefined) {
+				delete n.base[k];
+				delete n.remoto[k];
+			} else {
+				n.base[k] = v;
+				n.remoto[k] = v;
+			}
+			return operacion(e, k, v);
+		});
+		if (claves.indexOf("p") === -1) {
+			ops.push({ ref: refProyecto(n.id), actualizar: true, datos: { editado: ahora(), por: cuenta.nombre() } });
+		}
+		escribir(e, ops);
+	}
+
+	function programar(e) {
+		var n = e && e.nube;
+		if (!n || !puedeEditar(e)) { return; }
+		if (n.reloj) { window.clearTimeout(n.reloj); }
+		n.reloj = window.setTimeout(function () {
+			n.reloj = null;
+			subir(e);
+		}, ESPERA);
+		estado();
+		solapas.pintar();
+	}
+
+	function programarNuevo(e) {
+		if (!e || e.nube || !yo()) { return; }
+		if (e.relojNuevo) { window.clearTimeout(e.relojNuevo); }
+		e.relojNuevo = window.setTimeout(function () {
+			e.relojNuevo = null;
+			subirNuevo(e);
+		}, ESPERA);
+	}
+
+	function subirNuevo(e) {
+		if (!e || !yo() || !db()) { return Promise.resolve(null); }
+		if (e.nube) { return Promise.resolve(e.nube.id); }
+		if (e.creando) { return e.creando; }
+		if (e.relojNuevo) {
+			window.clearTimeout(e.relojNuevo);
+			e.relojNuevo = null;
+		}
+		var u = yo();
+		var id = db().collection("proyectos").doc().id;
+		var local = fotoLocal(e);
+		var p = JSON.parse(local.p);
+		var datos = {
+			nombre: p.nombre,
+			carpetas: p.carpetas,
+			dueno: u.uid,
+			duenoNombre: cuenta.nombre(),
+			duenoCorreo: cuenta.correo(),
+			editores: [],
+			lectores: [],
+			enlace: "nadie",
+			creado: ahora(),
+			editado: ahora(),
+			por: cuenta.nombre()
+		};
+		var n = nuevoEstado(id, datos);
+		n.subiendo++;
+		e.nube = n;
+		n.base.p = local.p;
+		n.remoto.p = local.p;
+		estado();
+		solapas.pintar();
+		e.creando = refProyecto(id).set(datos).then(function () {
+			e.creando = null;
+			n.subiendo--;
+			seguir(e);
+			if (esActiva(e)) { alMostrar(e); }
+			subir(e);
+			util.aviso("El proyecto se guarda solo en tu cuenta");
+			return id;
+		}).catch(function (err) {
+			e.creando = null;
+			e.nube = null;
+			console.error(err);
+			util.aviso("No se pudo guardar el proyecto en la cuenta", 3200);
+			estado();
+			solapas.pintar();
+			return null;
+		});
+		return e.creando;
+	}
+
+	function soltarEscuchas(e) {
+		var n = e && e.nube;
+		if (!n) { return; }
+		n.subs.forEach(function (fn) { try { fn(); } catch (x) { } });
+		n.subs = [];
+		if (n.reloj) {
+			window.clearTimeout(n.reloj);
+			n.reloj = null;
+		}
+	}
+
+	function perdido(e, err) {
+		var n = e && e.nube;
+		if (!n || n.perdido) { return; }
+		n.perdido = true;
+		console.error(err);
+		soltarEscuchas(e);
+		if (presente.e === e) { salirPresencia(); }
+		e.nube = null;
+		if (esActiva(e)) { util.ponerCambios(true); } else { e.sucio = true; }
+		util.aviso('Ya no tenés acceso a "' + solapas.nombre(e) + '". Queda abierto como copia local.', 4200);
+		solapas.pintar();
+		estado();
+		ponerUrl(solapas.actual());
+	}
+
+	function alProyecto(e, s) {
+		var n = e.nube;
+		if (!n) { return; }
+		if (!s.exists) {
+			perdido(e, { code: "not-found" });
+			return;
+		}
+		var antes = rolDe(e);
+		n.datos = s.data();
+		n.remoto.p = textoP(n.datos);
+		conciliar(e);
+		if (rolDe(e) !== antes) {
+			solapas.pintar();
+			estado();
+		}
+		if (typeof compartir !== "undefined") { compartir.alCambiar(e); }
+	}
+
+	function alColeccion(e, s, pre) {
+		var n = e.nube;
+		if (!n) { return; }
+		s.docChanges().forEach(function (c) {
+			var k = pre + c.doc.id;
+			if (c.type === "removed") { delete n.remoto[k]; }
+			else { n.remoto[k] = pre === "m/" ? textoMetodo(c.doc.data()) : textoUml(c.doc.data()); }
+		});
+		conciliar(e);
+	}
+
+	function seguir(e) {
+		var n = e && e.nube;
+		if (!n || n.subs.length) { return; }
+		var ref = refProyecto(n.id);
+		var mal = function (err) { perdido(e, err); };
+		n.subs.push(ref.onSnapshot(function (s) { alProyecto(e, s); }, mal));
+		n.subs.push(ref.collection("metodos").onSnapshot(function (s) { alColeccion(e, s, "m/"); }, mal));
+		n.subs.push(ref.collection("uml").onSnapshot(function (s) { alColeccion(e, s, "u/"); }, mal));
+	}
+
+	function abrir(pid) {
+		var ya = solapas.todas().filter(function (e) { return e.nube && e.nube.id === pid; })[0];
+		if (ya) {
+			solapas.irA(ya);
+			return Promise.resolve(ya);
+		}
+		if (!db()) {
+			util.aviso("El inicio de sesión todavía no está configurado", 3200);
+			return Promise.resolve(null);
+		}
+		util.aviso("Abriendo el proyecto…");
+		var ref = refProyecto(pid);
+		return Promise.all([ref.get(), ref.collection("metodos").get(), ref.collection("uml").get()]).then(function (r) {
+			if (!r[0].exists) { throw { code: "not-found" }; }
+			var mapa = { p: textoP(r[0].data()) };
+			r[1].forEach(function (d) { mapa["m/" + d.id] = textoMetodo(d.data()); });
+			r[2].forEach(function (d) { mapa["u/" + d.id] = textoUml(d.data()); });
+			var n = nuevoEstado(pid, r[0].data());
+			var todas = {};
+			Object.keys(mapa).forEach(function (k) {
+				n.base[k] = mapa[k];
+				n.remoto[k] = mapa[k];
+				todas[k] = true;
+			});
+			var tmp = { proy: new Proyecto(par()), carpetas: null, dibujo: null, metodo: null };
+			reconstruir(tmp, mapa, todas);
+			var e = solapas.agregar(tmp.proy, { carpetas: tmp.carpetas, dibujo: tmp.dibujo, nube: n });
+			util.marcarGuardado();
+			seguir(e);
+			return e;
+		}).catch(function (err) {
+			var codigo = err && err.code ? err.code : "";
+			if (codigo === "permission-denied" || codigo === "not-found") {
+				if (!yo()) {
+					pedido = pid;
+					util.aviso("Ese proyecto es privado: iniciá sesión con Google (arriba a la derecha) para abrirlo", 5200);
+				} else {
+					alert("Ese proyecto no existe o no tenés permiso para verlo.\n" +
+						"Pedile a quien lo compartió que te agregue con " + cuenta.correo() + ".");
+				}
+			} else {
+				alert("No se pudo abrir el proyecto.\n\nDetalle: " + (err && err.message ? err.message : err));
+			}
+			return null;
+		});
+	}
+
+	function borrar(pid) {
+		var ref = refProyecto(pid);
+		var abierta = solapas.todas().filter(function (e) { return e.nube && e.nube.id === pid; })[0];
+		if (abierta) {
+			soltarEscuchas(abierta);
+			if (presente.e === abierta) { salirPresencia(); }
+			abierta.nube = null;
+			if (esActiva(abierta)) { util.ponerCambios(true); } else { abierta.sucio = true; }
+			solapas.pintar();
+			estado();
+			ponerUrl(solapas.actual());
+		}
+		return Promise.all(["metodos", "uml", "gente"].map(function (c) { return ref.collection(c).get(); })).then(function (r) {
+			var refs = [];
+			r.forEach(function (s) { s.forEach(function (d) { refs.push(d.ref); }); });
+			var lotes = [];
+			for (var i = 0; i < refs.length; i += TANDA) {
+				var b = db().batch();
+				refs.slice(i, i + TANDA).forEach(function (x) { b.delete(x); });
+				lotes.push(b.commit());
+			}
+			return Promise.all(lotes);
+		}).then(function () { return ref.delete(); });
+	}
+
+	function cambiarAcceso(e, datos) {
+		if (!e || !e.nube) { return Promise.reject(new Error("El proyecto no está en la cuenta")); }
+		return refProyecto(e.nube.id).update(datos);
+	}
+
+	function link(e) {
+		if (!e || !e.nube) { return ""; }
+		var u = new URL(window.location.href);
+		u.search = "";
+		u.hash = "";
+		u.searchParams.set("p", e.nube.id);
+		return u.toString();
+	}
+
+	function ponerUrl(e) {
+		try {
+			var u = new URL(window.location.href);
+			if (e && e.nube) { u.searchParams.set("p", e.nube.id); } else { u.searchParams.delete("p"); }
+			window.history.replaceState(null, "", u.toString());
+		} catch (x) { }
+	}
+
+	function colorDe(uid) {
+		var h = 0;
+		for (var i = 0; i < uid.length; i++) { h = (h * 31 + uid.charCodeAt(i)) >>> 0; }
+		return COLORES[h % COLORES.length];
+	}
+
+	function vivos() {
+		var t = Date.now();
+		return Object.keys(gente).filter(function (uid) { return t - (gente[uid].t || 0) < VIGENCIA; });
+	}
+
+	function dondeEsta(x) {
+		if (x.vista === "uml") { return "en el diagrama UML"; }
+		var d = solapas.lista(solapas.actual()).filter(function (m) { return m.nube && m.nube === x.metodo; })[0];
+		return d ? "en " + metodos.rotulo(d) : "en el proyecto";
+	}
+
+	function pintarGente() {
+		var caja = document.getElementById("nshGente");
+		if (!caja) { return; }
+		var ids = vivos();
+		var firma = ids.map(function (uid) { return uid + gente[uid].metodo + gente[uid].vista + gente[uid].foto; }).join("|");
+		if (firma === firmaGente) { return; }
+		firmaGente = firma;
+		caja.innerHTML = "";
+		ids.slice(0, 5).forEach(function (uid) {
+			var x = gente[uid];
+			var s = document.createElement("span");
+			s.className = "nsh-gente-cara";
+			s.style.setProperty("--nsh-gente", colorDe(uid));
+			s.title = (x.nombre || "Alguien") + " · " + dondeEsta(x);
+			s.innerHTML = cuenta.avatar(x.foto, x.nombre, "nsh-avatar");
+			caja.appendChild(s);
+		});
+		if (ids.length > 5) {
+			var mas = document.createElement("span");
+			mas.className = "nsh-gente-mas";
+			mas.textContent = "+" + (ids.length - 5);
+			caja.appendChild(mas);
+		}
+		marcarArbol();
+	}
+
+	function marcarArbol() {
+		var e = solapas.actual();
+		util.qq(".nsh-row-gente").forEach(function (n) { n.remove(); });
+		if (!e || !e.nube) { return; }
+		var ids = vivos();
+		if (!ids.length) { return; }
+		solapas.lista(e).forEach(function (d) {
+			var aca = ids.filter(function (uid) { return gente[uid].vista !== "uml" && gente[uid].metodo === d.nube; });
+			if (!aca.length) { return; }
+			var f = document.querySelector('.nsh-row[data-nsh-kind="diagram"][data-nsh-id="' + d.id + '"]');
+			if (!f) { return; }
+			var z = document.createElement("span");
+			z.className = "nsh-row-gente";
+			z.title = aca.map(function (uid) { return gente[uid].nombre || "Alguien"; }).join(", ");
+			aca.slice(0, 3).forEach(function (uid) {
+				var p = document.createElement("i");
+				p.style.background = colorDe(uid);
+				z.appendChild(p);
+			});
+			var r = f.querySelector(".nsh-row-label");
+			if (r) { f.insertBefore(z, r.nextSibling); } else { f.appendChild(z); }
+		});
+	}
+
+	function latir(forzar) {
+		var e = presente.e;
+		if (!e || !e.nube || !yo()) { return; }
+		var d = lienzo.actualDiagram;
+		var x = {
+			nombre: cuenta.nombre(),
+			foto: yo().photoURL || "",
+			metodo: d && d.nube ? d.nube : "",
+			vista: uml.activo() ? "uml" : "ns",
+			t: Date.now()
+		};
+		var firma = x.metodo + "|" + x.vista;
+		if (!forzar && firma === presente.firma && x.t - presente.t < LATIDO) { return; }
+		presente.firma = firma;
+		presente.t = x.t;
+		refProyecto(e.nube.id).collection("gente").doc(yo().uid).set(x).catch(function () { });
+	}
+
+	function salirPresencia() {
+		var e = presente.e;
+		if (e && e.nube && yo()) {
+			refProyecto(e.nube.id).collection("gente").doc(yo().uid).delete().catch(function () { });
+		}
+		if (presente.sub) {
+			presente.sub();
+			presente.sub = null;
+		}
+		presente.e = null;
+		presente.firma = "";
+		gente = {};
+		pintarGente();
+	}
+
+	function entrarPresencia(e) {
+		if (presente.e === e) { return; }
+		salirPresencia();
+		if (!e || !e.nube || !yo()) { return; }
+		presente.e = e;
+		latir(true);
+		presente.sub = refProyecto(e.nube.id).collection("gente").onSnapshot(function (s) {
+			var u = yo();
+			gente = {};
+			s.forEach(function (doc) { if (!u || doc.id !== u.uid) { gente[doc.id] = doc.data(); } });
+			pintarGente();
+		}, function () { });
+	}
+
+	function pendiente(e) {
+		if (!e) { return false; }
+		if (e.relojNuevo || e.creando) { return true; }
+		var n = e.nube;
+		return !!n && (!!n.reloj || n.subiendo > 0 || !!n.error);
+	}
+
+	function estado() {
+		var caja = document.getElementById("nshNubeEstado");
+		if (!caja) { return; }
+		var e = solapas.actual();
+		var html = "";
+		if (e && e.nube) {
+			var n = e.nube;
+			if (!puedeEditar(e)) { html = '<i class="fa fa-eye"></i> Solo lectura'; }
+			else if (n.error) { html = '<i class="fa fa-exclamation-triangle"></i> No se pudo guardar en la cuenta'; }
+			else if (n.reloj || n.subiendo) {
+				html = navigator.onLine === false
+					? '<i class="fa fa-wifi"></i> Sin conexión: se guarda al volver'
+					: '<i class="fa fa-refresh fa-spin"></i> Guardando…';
+			}
+			else { html = '<i class="fa fa-cloud"></i> Guardado en la cuenta'; }
+		} else if (e) {
+			html = yo()
+				? '<i class="fa fa-laptop"></i> Proyecto local: se guarda en la cuenta al editarlo'
+				: '<i class="fa fa-laptop"></i> Proyecto local';
+		}
+		caja.innerHTML = html;
+	}
+
+	function alCambio() {
+		var e = solapas.actual();
+		if (!e) { return; }
+		if (e.nube) { programar(e); } else { programarNuevo(e); }
+	}
+
+	function alMostrar(e) {
+		ponerUrl(e);
+		entrarPresencia(e);
+		conciliar(e);
+		estado();
+	}
+
+	function alDejar(e) {
+		if (!e) { return; }
+		if (e.relojNuevo) { subirNuevo(e); }
+		if (e.nube && e.nube.reloj) { subir(e); }
+		if (presente.e === e) { salirPresencia(); }
+	}
+
+	function soltar(e) {
+		if (!e) { return; }
+		if (e.relojNuevo) {
+			window.clearTimeout(e.relojNuevo);
+			e.relojNuevo = null;
+		}
+		if (presente.e === e) { salirPresencia(); }
+		soltarEscuchas(e);
+	}
+
+	function alUsuario(u) {
+		if (!u) {
+			salirPresencia();
+			solapas.todas().forEach(function (e) {
+				if (!e.nube) { return; }
+				if (rolDe(e) === "lector") { return; }
+				soltarEscuchas(e);
+				e.nube = null;
+				solapas.cerrar(e, true);
+			});
+			solapas.pintar();
+			estado();
+			return;
+		}
+		solapas.todas().forEach(function (e) {
+			if (!e.nube && (e === solapas.actual() ? util.hayCambios() : e.sucio)) { subirNuevo(e); }
+		});
+		var act = solapas.actual();
+		if (act && act.nube) {
+			presente.e = null;
+			alMostrar(act);
+		}
+		if (pedido) {
+			var pid = pedido;
+			pedido = null;
+			abrir(pid);
+		}
+		solapas.pintar();
+		estado();
+	}
+
+	o.iniciar = function () {
+		util.alCambiar = alCambio;
+		cuenta.alCambiar(alUsuario);
+
+		var c = lienzo.container;
+		if (c) {
+			c.addEventListener("input", alCambio);
+			c.addEventListener("focusout", function () {
+				window.setTimeout(function () { conciliar(solapas.actual()); }, 0);
+			});
+		}
+		var t = document.getElementById("umlText");
+		if (t) {
+			t.addEventListener("blur", function () {
+				window.setTimeout(function () { conciliar(solapas.actual()); }, 0);
+			});
+		}
+		window.addEventListener("pointerup", function () {
+			window.setTimeout(function () {
+				var e = solapas.actual();
+				if (e && e.nube && e.nube.atrasado) { conciliar(e); }
+			}, 50);
+		});
+		window.addEventListener("online", estado);
+		window.addEventListener("offline", estado);
+		document.addEventListener("visibilitychange", function () {
+			if (document.visibilityState === "visible") { latir(true); }
+		});
+		window.setInterval(function () {
+			var e = solapas.actual();
+			if (e && e.nube && e.nube.atrasado) { conciliar(e); }
+			if (document.visibilityState === "visible") { latir(false); }
+			pintarGente();
+		}, 2000);
+
+		var pid = new URLSearchParams(window.location.search).get("p");
+		cuenta.cuando(function () {
+			if (pid) { abrir(pid); }
+		});
+		estado();
+	};
+
+	o.rolDe = rolDe;
+	o.puedeEditar = puedeEditar;
+	o.soloLectura = function () {
+		var e = solapas.actual();
+		return !!(e && e.nube && !puedeEditar(e));
+	};
+	o.pendiente = pendiente;
+	o.hayPendientes = function () { return solapas.todas().some(pendiente); };
+	o.subirNuevo = subirNuevo;
+	o.abrir = abrir;
+	o.borrar = borrar;
+	o.cambiarAcceso = cambiarAcceso;
+	o.link = link;
+	o.alMostrar = alMostrar;
+	o.alDejar = alDejar;
+	o.soltar = soltar;
+	o.marcarArbol = marcarArbol;
+	o.alIrse = function () {
+		var e = solapas.actual();
+		if (e && e.nube && e.nube.reloj) { subir(e); }
+		salirPresencia();
+	};
+
+	return o;
+}());

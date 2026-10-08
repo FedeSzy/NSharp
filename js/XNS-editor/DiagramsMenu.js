@@ -479,6 +479,7 @@ function Arbol() {
 		nivel(null, mets, _yo.itemsContainer);
 		_yo.itemsContainer.scrollTop = scroll;
 		pintarElegidos();
+		if (typeof nube !== "undefined") { nube.marcarArbol(); }
 	};
 
 	this.cuantos = cuantos;

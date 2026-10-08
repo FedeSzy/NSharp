@@ -102,10 +102,12 @@ function leerArchivo(f) {
 				alert("No se pudo abrir el archivo.\nRevisá que sea un .nsplus válido.\n\nDetalle: " + error);
 				return;
 			}
-			proy = abierto;
-			antesDeAbrir();
-			util.marcarGuardado();
+			solapas.agregar(abierto, {
+				carpetas: abierto.extra,
+				dibujo: abierto.extra ? abierto.extra.uml : null
+			});
 			util.aviso('Se abrió "' + elArchivo.name + '"');
+			if (typeof nube !== "undefined") { nube.subirNuevo(solapas.actual()); }
 		};
 	})(f);
 	lector.readAsText(f);

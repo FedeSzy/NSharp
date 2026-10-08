@@ -1,7 +1,42 @@
 var solapas = (function () {
 	var o = {};
 
+	var abiertos = [];
+	var actual = null;
+
 	function barra() { return document.getElementById("nshTabs"); }
+
+	function lista(e) {
+		var r = [];
+		if (e && e.proy) { e.proy.publishTo(function (d) { r.push(d); }); }
+		return r;
+	}
+
+	function nombre(e) {
+		var n = (e.proy.name || "").trim();
+		return n || SIN_NOMBRE;
+	}
+
+	function entrada(p) {
+		return { id: util.nuevoId("p"), proy: p, carpetas: null, dibujo: null, metodo: null, sucio: false, nube: null };
+	}
+
+	function hayNube() { return typeof nube !== "undefined"; }
+
+	function soloVer(e) { return hayNube() && nube.rolDe(e) === "lector"; }
+
+	function sinGuardarDe(e) {
+		if (e.nube && hayNube()) { return nube.pendiente(e); }
+		return e === actual ? util.hayCambios() : e.sucio;
+	}
+
+	function vacia(e) {
+		if (!e || e !== actual || e.nube || util.hayCambios()) { return false; }
+		if (nombre(e) !== SIN_NOMBRE) { return false; }
+		if (uml.guardar()) { return false; }
+		var l = lista(e);
+		return l.length <= 1 && l.every(function (d) { return metodos.cuantosBloques(d) === 0; });
+	}
 
 	function abrir(d) {
 		if (!d || d === lienzo.actualDiagram) { return; }
@@ -11,105 +46,186 @@ var solapas = (function () {
 		historial.reset(d);
 	}
 
-	function renombrar(tab, d) {
-		if (tab.querySelector(".nsh-tab-input")) { return; }
+	function guardarActual() {
+		if (!actual) { return; }
+		actualizarDiagrama();
+		var l = lista(actual);
+		actual.carpetas = clases.paraGuardar(l);
+		actual.dibujo = uml.guardar();
+		actual.metodo = lienzo.actualDiagram || null;
+		actual.sucio = util.hayCambios();
+		seleccion.limpiarSeleccion();
+		arbol.limpiarSeleccion();
+		if (hayNube()) { nube.alDejar(actual); }
+	}
+
+	function mostrar(e) {
+		actual = e;
+		proy = e.proy;
+		var l = lista(e);
+		clases.desdeArchivo(e.carpetas, l);
+		uml.cargar(e.dibujo);
+		arbol.vaciarArbol();
+		historial.limpiarTodo();
+		var d = (e.metodo && l.indexOf(e.metodo) !== -1) ? e.metodo : (l[0] || null);
+		lienzo.setDiagram(d);
+		arbol.activar(d);
+		if (d) { historial.reset(d); }
+		util.ponerCambios(e.sucio);
+		util.actualizarTitulo();
+		pintar();
+		if (hayNube()) { nube.alMostrar(e); }
+	}
+
+	function ir(e) {
+		if (!e || e === actual) { return; }
+		guardarActual();
+		mostrar(e);
+	}
+
+	function quitar(e) {
+		var i = abiertos.indexOf(e);
+		if (i !== -1) { abiertos.splice(i, 1); }
+		if (hayNube()) { nube.soltar(e); }
+	}
+
+	function agregar(p, datos) {
+		var reemplazo = vacia(actual) ? actual : null;
+		guardarActual();
+		var e = entrada(p);
+		e.carpetas = (datos && datos.carpetas) || null;
+		e.dibujo = (datos && datos.dibujo) || null;
+		e.nube = (datos && datos.nube) || null;
+		abiertos.splice(abiertos.indexOf(actual) + 1, 0, e);
+		if (reemplazo) { quitar(reemplazo); }
+		mostrar(e);
+		return e;
+	}
+
+	function nuevo() {
+		guardarActual();
+		var e = entrada(new Proyecto(par()));
+		clases.reset();
+		lienzo.setInitialDiagram();
+		e.proy.addDiagram(lienzo.actualDiagram);
+		e.metodo = lienzo.actualDiagram;
+		abiertos.splice(abiertos.indexOf(actual) + 1, 0, e);
+		mostrar(e);
+		return e;
+	}
+
+	function cerrar(e, sinPreguntar) {
+		if (!sinPreguntar && sinGuardarDe(e) && !confirm('"' + nombre(e) + '" tiene cambios sin guardar.\n¿Cerrarlo igual?')) { return; }
+		var i = abiertos.indexOf(e);
+		if (e !== actual) {
+			quitar(e);
+			pintar();
+			return;
+		}
+		guardarActual();
+		quitar(e);
+		actual = null;
+		var sig = abiertos[Math.min(i, abiertos.length - 1)];
+		if (sig) { mostrar(sig); } else { nuevo(); }
+	}
+
+	function cerrarOtras(e) {
+		ir(e);
+		abiertos.slice().forEach(function (x) { if (x !== e) { cerrar(x); } });
+	}
+
+	function renombrar(tab, e) {
+		if (tab.querySelector(".nsh-tab-input") || soloVer(e)) { return; }
 		var rot = tab.querySelector(".nsh-tab-label");
 		var i = document.createElement("input");
 		i.className = "nsh-tab-input";
-		i.value = d.name || "";
+		i.value = (e.proy.name || "").trim() === SIN_NOMBRE ? "" : (e.proy.name || "");
+		i.placeholder = SIN_NOMBRE;
 		rot.style.display = "none";
 		tab.insertBefore(i, rot);
 		i.focus();
 		i.select();
 
 		var hecho = false;
-		function cerrar(guardar) {
+		function listo(guardar) {
 			if (hecho) { return; }
 			hecho = true;
 			var v = i.value.trim();
 			i.remove();
 			rot.style.display = "";
-			if (guardar && v && v !== d.name) {
-				metodos.renombrar(d, { nombre: v });
-				arbol.pintar();
+			if (guardar && v && v !== e.proy.name) {
+				e.proy.name = v;
+				if (e === actual) { util.marcarCambios(); } else { e.sucio = true; }
+				util.actualizarTitulo();
 			}
 			pintar();
 		}
-		i.addEventListener("keydown", function (e) {
-			e.stopPropagation();
-			if (e.key === "Enter") { cerrar(true); }
-			else if (e.key === "Escape") { cerrar(false); }
+		i.addEventListener("keydown", function (ev) {
+			ev.stopPropagation();
+			if (ev.key === "Enter") { listo(true); }
+			else if (ev.key === "Escape") { listo(false); }
 		});
-		i.addEventListener("blur", function () { cerrar(true); });
-		i.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+		i.addEventListener("blur", function () { listo(true); });
+		i.addEventListener("pointerdown", function (ev) { ev.stopPropagation(); });
 	}
 
-	function unaTab(d, n) {
+	function unaTab(e, n) {
 		var tab = document.createElement("div");
 		tab.className = "nsh-tab";
-		tab.setAttribute("data-nsh-id", d.id);
-		tab.title = (d.theClass ? d.theClass + "." : "") + d.name + "()   (Ctrl+" + (n + 1) + ")";
+		tab.setAttribute("data-nsh-id", e.id);
+		tab.title = nombre(e) + (n < 8 ? "   (Ctrl+" + (n + 1) + ")" : "");
+
+		var ico = document.createElement("i");
+		ico.className = "nsh-tab-ico fa " + (e.nube ? (soloVer(e) ? "fa-eye" : "fa-cloud") : "fa-file-o");
+		ico.title = e.nube ? (soloVer(e) ? "Compartido con vos (solo lectura)" : "Guardado en la cuenta") : "Proyecto local";
+		tab.appendChild(ico);
 
 		var rot = document.createElement("span");
 		rot.className = "nsh-tab-label";
-		if (d.theClass) {
-			var c = document.createElement("span");
-			c.className = "nsh-tab-class";
-			c.textContent = d.theClass + ".";
-			rot.appendChild(c);
-		}
-		rot.appendChild(document.createTextNode(d.name || "sin nombre"));
+		rot.textContent = nombre(e);
 		tab.appendChild(rot);
+
+		if (sinGuardarDe(e)) { tab.classList.add("nsh-tab-sucia"); }
 
 		var x = document.createElement("i");
 		x.className = "nsh-tab-close fa fa-times";
-		x.title = "Eliminar este método";
-		x.addEventListener("click", function (e) {
-			e.stopPropagation();
-			if (confirm("¿Eliminar este método? Se pierde el diagrama que tiene adentro.")) { eliminarMetodo(d); }
+		x.title = "Cerrar el proyecto";
+		x.addEventListener("click", function (ev) {
+			ev.stopPropagation();
+			cerrar(e);
 		});
 		tab.appendChild(x);
 
-		if (d === lienzo.actualDiagram) { tab.classList.add("nsh-tab-active"); }
+		if (e === actual) { tab.classList.add("nsh-tab-active"); }
 
-		tab.addEventListener("click", function () { abrir(d); });
-		tab.addEventListener("dblclick", function (e) {
-			e.stopPropagation();
-			renombrar(tab, d);
+		tab.addEventListener("click", function () { ir(e); });
+		tab.addEventListener("auxclick", function (ev) {
+			if (ev.button === 1) { ev.preventDefault(); cerrar(e); }
 		});
-		tab.addEventListener("contextmenu", function (e) {
-			e.preventDefault();
-			menu.abrir(e.clientX, e.clientY, [
-				{ title: d.name + "()" },
+		tab.addEventListener("dblclick", function (ev) {
+			ev.stopPropagation();
+			renombrar(tab, e);
+		});
+		tab.addEventListener("contextmenu", function (ev) {
+			ev.preventDefault();
+			menu.abrir(ev.clientX, ev.clientY, [
+				{ title: nombre(e) },
 				{
-					label: "Renombrar método", icon: "pencil", key: "F2",
-					action: function () { abrir(d); renombrar(tab, d); }
-				},
-				{
-					label: "Renombrar clase", icon: "cube", action: function () {
-						var v = prompt("Nombre de la clase:", d.theClass || "");
-						if (v !== null && v.trim()) {
-							metodos.renombrar(d, { clase: v.trim() });
-							arbol.pintar();
-							pintar();
-						}
+					label: "Renombrar proyecto", icon: "pencil", action: function () {
+						ir(e);
+						var t = barra().querySelector('.nsh-tab[data-nsh-id="' + e.id + '"]');
+						if (t) { renombrar(t, e); }
 					}
 				},
 				{
-					label: "Duplicar", icon: "clone", action: function () {
-						var copia = proy.cloneDiagram(metodos.posicionDe(d));
-						clases.asignarA(copia.id, clases.claseDeMetodo(d.id));
-						abrir(copia);
-						arbol.pintar();
-						pintar();
+					label: "Compartir", icon: "user-plus", action: function () {
+						ir(e);
+						compartir.abrir();
 					}
 				},
 				{ separator: true },
-				{
-					label: "Eliminar método", icon: "trash", danger: true, action: function () {
-						if (confirm("¿Eliminar este método? Se pierde el diagrama que tiene adentro.")) { eliminarMetodo(d); }
-					}
-				}
+				{ label: "Cerrar las demás", icon: "clone", action: function () { cerrarOtras(e); } },
+				{ label: "Cerrar", icon: "times", danger: true, action: function () { cerrar(e); } }
 			]);
 		});
 		return tab;
@@ -117,19 +233,22 @@ var solapas = (function () {
 
 	function pintar() {
 		var casa = barra();
-		if (!casa || casa.querySelector(".nsh-tab-input")) { return; }
+		if (!casa || !actual || casa.querySelector(".nsh-tab-input")) { return; }
 		var scroll = casa.scrollLeft;
 		casa.innerHTML = "";
-		metodos.lista().forEach(function (d, n) { casa.appendChild(unaTab(d, n)); });
+		abiertos.forEach(function (e, n) { casa.appendChild(unaTab(e, n)); });
 		var mas = document.createElement("button");
 		mas.id = "nshTabNew";
 		mas.type = "button";
-		mas.title = "Nuevo método (Ctrl+N)";
+		mas.title = "Nuevo proyecto";
 		mas.innerHTML = '<i class="fa fa-plus"></i>';
-		mas.addEventListener("click", function () { nuevoMetodo(); });
+		mas.addEventListener("click", function () { nuevo(); });
 		casa.appendChild(mas);
 		casa.scrollLeft = scroll;
 		aLaVista();
+		var s = document.getElementById("nshSoloVer");
+		if (s) { s.classList.toggle("invisible", !soloVer(actual)); }
+		document.body.classList.toggle("nsh-solo-lectura", soloVer(actual));
 	}
 
 	function aLaVista() {
@@ -144,22 +263,34 @@ var solapas = (function () {
 	}
 
 	function pasar(p) {
-		var l = metodos.lista();
-		if (l.length < 2) { return; }
-		var i = l.indexOf(lienzo.actualDiagram);
-		abrir(l[((i + p) % l.length + l.length) % l.length]);
+		if (abiertos.length < 2) { return; }
+		var i = abiertos.indexOf(actual);
+		ir(abiertos[((i + p) % abiertos.length + abiertos.length) % abiertos.length]);
 	}
 
-	function ir(i) {
-		var l = metodos.lista();
-		if (i >= 0 && i < l.length) { abrir(l[i]); }
+	function porNumero(i) {
+		if (i >= 0 && i < abiertos.length) { ir(abiertos[i]); }
 	}
 
 	o.pintar = pintar;
 	o.abrir = abrir;
 	o.pasar = pasar;
-	o.ir = ir;
+	o.ir = porNumero;
+	o.irA = ir;
+	o.agregar = agregar;
+	o.nuevo = nuevo;
+	o.cerrar = cerrar;
+	o.lista = lista;
+	o.nombre = nombre;
+	o.actual = function () { return actual; };
+	o.todas = function () { return abiertos.slice(); };
+	o.sinGuardar = function () { return abiertos.some(sinGuardarDe); };
 	o.iniciar = function () {
+		actual = entrada(proy);
+		actual.metodo = lienzo.actualDiagram || null;
+		abiertos = [actual];
+		var b = document.getElementById("nshNuevoProyectoBtn");
+		if (b) { b.addEventListener("click", nuevo); }
 		var casa = barra();
 		if (!casa) { return; }
 		casa.addEventListener("wheel", function (e) {

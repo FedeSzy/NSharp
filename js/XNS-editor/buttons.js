@@ -6,8 +6,6 @@ var btnSalir = document.getElementById("exitBtn");
 var btnNuevo = document.getElementById("newDiagram");
 var btnVerTodo = document.getElementById("viewAllDiagrams");
 
-var tildeColor = document.getElementById("checkColors");
-
 var btnHist = document.getElementById("historialBtn");
 var globoHist = document.getElementById("hist-popup");
 
@@ -28,7 +26,6 @@ function iniciarBotones(p) {
 
 	enganchar(btnNuevo, "click", nuevoMetodo);
 	enganchar(btnVerTodo, "click", verTodos);
-	enganchar(tildeColor, "click", alternarColores);
 
 	enganchar(btnAbrirPaleta, "click", abrirPaleta);
 	enganchar(btnCerrarPaleta, "click", cerrarPaleta);

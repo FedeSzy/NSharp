@@ -26,11 +26,6 @@ function botonDeclaracion(e) {
 	actualizarDiagrama();
 }
 
-function alternarColores(e) {
-	var link = document.getElementById("css/NSPColors.css");
-	link.setAttribute("href", (e.target.checked ? link.id : ""));
-}
-
 function verTodos(e) {
 	alert("La vista de todos los métodos juntos todavía no está disponible.");
 }
@@ -94,7 +89,8 @@ function cerrarVentana() {
 }
 
 function alIrse(e) {
-	if (!util.hayCambios()) {
+	if (typeof nube !== "undefined") { nube.alIrse(); }
+	if (!solapas.sinGuardar()) {
 		return;
 	}
 	e.preventDefault();

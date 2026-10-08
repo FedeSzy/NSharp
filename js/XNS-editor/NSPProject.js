@@ -42,6 +42,7 @@ function Proyecto(data) {
 
 	var _meta = null;
 	var _log = null;
+	var _extra = null;
 
 	function init() { resetData(); setData(data); setEnv(data); checkMEV(); starCheckTimer() }
 	function checkMEV() {
@@ -170,9 +171,9 @@ function Proyecto(data) {
 		setMeta(obj.meta);
 		if (isEvalTime() && !(isTeacher() || isMyFile(obj["autor"] || obj["usr"]))) throw "Invalid";
 		obj.diagrams.forEach(d => { addDiagram(new Metodo(d.theClass, d.name, d.code)); });
-		if (typeof clases != "undefined") { clases.desdeArchivo(obj["nsharp"], _diagrams); }
-		if (typeof uml != "undefined") { uml.cargar(obj["nsharp"] ? obj["nsharp"].uml : null); }
+		_extra = obj["nsharp"] || null;
 	}
+	function getExtra() { return _extra }
 	function isMyFile(a) { return a == _env["usr"] }
 	function setMeta(v) { _meta = v; _log = conv.toJS(_meta) }
 	function getMeta() { return _meta }
@@ -180,7 +181,7 @@ function Proyecto(data) {
 	function hasDiagrams() { return getDiagramLength() > 0 }
 	function getResolutionTime() { if (!_minutes) updateTime(); return _minutes }
 
-	function getFirst() { return (hasDiagrams) ? _diagrams[0] : null }
+	function getFirst() { return (hasDiagrams()) ? _diagrams[0] : null }
 	function getDiagram(i) { return (_diagrams.length > i) ? _diagrams[i] : null }
 	function publish(callback) { if (callback) _diagrams.forEach(d => { callback(d) }); }
 
@@ -204,6 +205,7 @@ function Proyecto(data) {
 	Object.defineProperty(_self, "resolutionTime", { "enumerable": true, "configurable": false, "get": getResolutionTime });
 	Object.defineProperty(_self, "et", { "enumerable": true, "configurable": false, "get": isEvalTime });
 	Object.defineProperty(_self, "fullname", { "enumerable": true, "configurable": false, "get": getFullname });
+	Object.defineProperty(_self, "extra", { "enumerable": false, "configurable": false, "get": getExtra });
 
 	Object.defineProperty(_self, "updateTime", { "enumerable": false, "writable": false, "configurable": false, "value": updateTime })
 	Object.defineProperty(_self, "moveDiagramUp", { "enumerable": false, "writable": false, "configurable": false, "value": moveDiagramUp })

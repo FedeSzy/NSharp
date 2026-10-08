@@ -35,22 +35,12 @@ var tema = (function () {
 		return LISTA.some(function (t) { return t.id === id; });
 	}
 
-	function porId(id) {
-		for (var i = 0; i < LISTA.length; i++) { if (LISTA[i].id === id) { return LISTA[i]; } }
-		return LISTA[0];
-	}
-
 	function pintarChip(chip, t) {
 		chip.style.setProperty("--chip-a", t.tinta);
 		chip.style.setProperty("--chip-b", t.fondo);
 	}
 
 	function pintarPicker() {
-		var t = porId(actual);
-		var chip = document.getElementById("nshThemeChip");
-		var nombre = document.getElementById("nshThemeNombre");
-		if (chip) { pintarChip(chip, t); }
-		if (nombre) { nombre.textContent = t.label; }
 		util.qq("#nshThemeMenu .nsh-menu-item").forEach(function (b) {
 			b.classList.toggle("nsh-menu-elegido", b.getAttribute("data-nsh-tema") === actual);
 			b.setAttribute("aria-checked", b.getAttribute("data-nsh-tema") === actual ? "true" : "false");
@@ -63,6 +53,7 @@ var tema = (function () {
 		document.documentElement.setAttribute(ATRIB, real(id));
 		if (recordar !== false) {
 			try { window.localStorage.setItem(LLAVE, id); } catch (e) { }
+			if (typeof configuracion !== "undefined") { configuracion.guardar(); }
 		}
 		pintarPicker();
 		if (typeof dibujarEsquinas === "function") { dibujarEsquinas(); }
@@ -84,8 +75,7 @@ var tema = (function () {
 
 	function armarMenu() {
 		var caja = document.getElementById("nshThemeMenu");
-		var boton = document.getElementById("nshThemeBtn");
-		if (!caja || !boton) { return; }
+		if (!caja) { return; }
 
 		caja.setAttribute("role", "menu");
 		LISTA.forEach(function (t) {
@@ -111,8 +101,6 @@ var tema = (function () {
 			b.addEventListener("click", function () { poner(t.id); });
 			caja.appendChild(b);
 		});
-
-		desplegable.armar(boton, caja, { hover: false });
 	}
 
 	function iniciar() {
@@ -135,6 +123,7 @@ var tema = (function () {
 	o.tocar = tocar;
 	o.siguiente = siguiente;
 	o.esOscuro = esOscuro;
+	o.actual = function () { return actual; };
 	o.lista = LISTA;
 
 	return o;
