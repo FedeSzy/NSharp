@@ -36,7 +36,6 @@ var atajos = (function () {
 		["Duplicar lo elegido", "Ctrl+D  o  doble click"],
 		["Eliminar lo elegido", "Supr  o  Backspace"],
 		["Abrir un .uxf de UMLet", "Ctrl+O  o  arrastralo"],
-		["Guardar el diagrama como .uxf", "botón Guardar .uxf"],
 		["Generar las clases en el proyecto", "Ctrl+G"],
 		["Mover el plano", "Espacio+arrastrar  o  botón del medio"],
 		["Zoom", "Ctrl+rueda  o  pellizco"],
