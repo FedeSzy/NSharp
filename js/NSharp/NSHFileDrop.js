@@ -30,7 +30,6 @@ var archivos = (function () {
 			uml.abrirArchivo(f);
 			return;
 		}
-		if (util.hayCambios() && !confirm('Hay cambios sin guardar.\n¿Abrir "' + f.name + '" igual?')) { return; }
 		leerArchivo(f);
 	}
 

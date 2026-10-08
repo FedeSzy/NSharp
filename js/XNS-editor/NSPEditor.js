@@ -29,26 +29,12 @@ function hacerArrastrable(obj) {
 	obj.setAttribute("draggable", "true");
 }
 
-function antesDeAbrir() {
-	util.actualizarTitulo();
-	arbol.vaciarArbol();
-	historial.limpiarTodo();
-	if (proy.hasDiagrams) {
-		var primero = proy.getFirst();
-		lienzo.setDiagram(primero);
-		arbol.activar(primero);
-		engancharCampos();
-		medirCampos();
-		dibujarEsquinas();
-		historial.reset(primero);
-	}
-	solapas.pintar();
-}
-
 function acomodarPantalla() {
 	var header = document.getElementById("header");
 	var footer = document.getElementById("footer");
-	var alto = header.offsetHeight;
+	var barra = document.getElementById("nshTabsBar");
+	if (barra) { barra.style.top = header.offsetHeight + "px"; }
+	var alto = header.offsetHeight + (barra ? barra.offsetHeight : 0);
 	var bajo = footer.offsetHeight;
 	document.body.style.paddingTop = alto + "px";
 	document.body.style.paddingBottom = bajo + "px";

@@ -70,6 +70,13 @@
 					<i class="fa fa-folder-open-o"></i> <i class="fa fa-caret-down"></i>
 				</button>
 				<div id="fileButtons">
+					<a type="button" class="nsh-menu-item" id="nshNuevoProyectoBtn" title="Abrir un proyecto vacío en otra pestaña">
+						<i class="fa fa-file-o"></i> Nuevo proyecto
+					</a>
+					<a type="button" class="nsh-menu-item" id="nshMisProyectosBtn"
+						title="Proyectos guardados en tu cuenta y compartidos con vos">
+						<i class="fa fa-cloud"></i> Mis proyectos
+					</a>
 					<a type="button" class="nsh-menu-item" id="importProjectBtn"
 						title="Abrir un .nsplus o un .uxf de UMLet (Ctrl+O)">
 						<i class="fa fa-folder-open-o"></i> Abrir
@@ -106,13 +113,6 @@
 			<button type="button" id="nshRedoBtn" class="nsh-iconbtn" title="Rehacer (Ctrl+Y)" disabled>
 				<i class="fa fa-repeat"></i>
 			</button>
-			<button type="button" id="nshChecksBtn" class="nsh-iconbtn"
-				title="Mostrar siempre las casillas de selección (Ctrl+Shift+C)">
-				<i class="fa fa-check-square-o"></i>
-			</button>
-			<button type="button" id="nshHelpBtn" class="nsh-iconbtn" title="Atajos de teclado (F1)">
-				<i class="fa fa-info-circle"></i>
-			</button>
 		</div>
 
 		<div id="nshFind" class="w3-bar-item">
@@ -143,22 +143,52 @@
 			</div>
 		</div>
 
-		<div class="w3-bar-item">
-			<label class="nsh-toggle" title="Colorear los bloques del diagrama">
-				<input type="checkbox" id="checkColors" checked>
-				<span class="nsh-toggle-cara"><i class="fa fa-paint-brush"></i> Color</span>
-			</label>
-		</div>
-
-		<div class="w3-bar-item nsh-menuwrap">
-			<button type="button" id="nshThemeBtn" title="Tema de la aplicación">
-				<span class="nsh-chip" id="nshThemeChip"></span>
-				<span id="nshThemeNombre"></span>
-				<i class="fa fa-caret-down"></i>
+		<div class="w3-bar-item nsh-header-fin">
+			<button type="button" id="nshCompartirBtn" class="nsh-pildora" title="Compartir el proyecto">
+				<i class="fa fa-user-plus"></i> Compartir
 			</button>
-			<div id="nshThemeMenu"></div>
+			<div class="nsh-menuwrap">
+				<button type="button" id="nshCuentaBtn" class="nsh-pildora" title="Iniciar sesión con Google">
+					<i class="fa fa-google"></i> <span>Iniciar sesión</span>
+				</button>
+				<div id="nshCuentaMenu"></div>
+			</div>
+			<div class="nsh-menuwrap">
+				<button type="button" id="nshConfigBtn" class="nsh-iconbtn" title="Configuración">
+					<i class="fa fa-cog"></i>
+				</button>
+				<div id="nshConfigMenu">
+					<div class="nsh-config-titulo">Tema</div>
+					<div id="nshThemeMenu"></div>
+					<div class="nsh-menu-sep"></div>
+					<label class="nsh-menu-item nsh-config-switch" title="Colorear los bloques del diagrama">
+						<i class="fa fa-paint-brush"></i> Bloques con color
+						<input type="checkbox" id="checkColors" checked>
+						<span class="nsh-switch"></span>
+					</label>
+					<label class="nsh-menu-item nsh-config-switch"
+						title="Mostrar siempre las casillas de selección (Ctrl+Shift+C)">
+						<i class="fa fa-check-square-o"></i> Casillas siempre visibles
+						<input type="checkbox" id="nshChecksCheck">
+						<span class="nsh-switch"></span>
+					</label>
+					<div class="nsh-menu-sep"></div>
+					<button type="button" class="nsh-menu-item" id="nshHelpBtn">
+						<i class="fa fa-keyboard-o"></i> Atajos de teclado <span class="nsh-menu-key">F1</span>
+					</button>
+					<button type="button" class="nsh-menu-item" id="nshCreditsBtn">
+						<i class="fa fa-users"></i> Créditos
+					</button>
+				</div>
+			</div>
 		</div>
 	</header>
+
+	<div id="nshTabsBar">
+		<div id="nshTabs"></div>
+		<span id="nshSoloVer" class="invisible"><i class="fa fa-eye"></i> Solo lectura</span>
+		<div id="nshGente"></div>
+	</div>
 
 	<button id="buttonOpenDiagrams" class="w3-btn w3-indigo panelButton">Clases<i class="fa fa-arrow-down"></i></button>
 	<button id="buttonOpenBlocks" class="w3-btn w3-indigo panelButton"><i class="fa fa-arrow-down"></i>Bloques</button>
@@ -196,7 +226,6 @@
 		</div>
 
 		<section id="sectionDiagram" class="w3-animate-zoom initial-margin-left initial-margin-right">
-			<div id="nshTabs"></div>
 			<div id="nshCanvas">
 				<div id="actualDiagram"></div>
 			</div>
@@ -288,9 +317,7 @@
 
 	<footer id="footer" class="w3-indigo w3-bottom w3-row w3-padding-small">
 		<div class="professor w3-col s4 w3-center w3-cell w3-cell-middle">
-			<button type="button" id="nshCreditsBtn" class="nsh-footer-btn">
-				<i class="fa fa-sm fa-users"></i> Créditos
-			</button>
+			<span id="nshNubeEstado" class="nsh-footer-note"></span>
 		</div>
 		<div class="message w3-col s4 w3-center" id="historialBtn">Para todos desde ORT</div>
 		<div class="professor w3-col s4 w3-center w3-cell w3-cell-middle">
@@ -323,6 +350,10 @@
 		<div id="projectPrintDiagrams"></div>
 	</div>
 
+	<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 	<script type="application/javascript" src="js/XNS-core/html2canvas.js"></script>
 	<script type="application/javascript" src="js/XNS-core/Enumeration.js"></script>
 	<script type="application/javascript" src="js/XNS-core/ClassConstructor.js"></script>
@@ -344,6 +375,11 @@
 	<script type="application/javascript" src="js/NSharp/NSHViewport.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHShortcuts.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHCredits.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHConfig.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHNubeConfig.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHCuenta.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHNube.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHCompartir.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHFileDrop.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHUxf.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHUml.js"></script>

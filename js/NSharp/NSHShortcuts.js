@@ -14,7 +14,7 @@ var atajos = (function () {
 		["Buscar en el proyecto", "Ctrl+F"],
 		["Nuevo método", "Ctrl+N"],
 		["Renombrar el método actual", "F2"],
-		["Cambiar de método", "Ctrl+Tab  /  Ctrl+1..9"],
+		["Cambiar de proyecto", "Ctrl+Tab  /  Ctrl+1..8"],
 		["Cambiar entre la vista NS y la UML", "Ctrl+Shift+U"],
 		["Guardar (.nsplus) / Abrir", "Ctrl+S  /  Ctrl+O"],
 		["Zoom", "Ctrl+rueda  o  pellizco"],
@@ -73,13 +73,6 @@ var atajos = (function () {
 		document.body.appendChild(v);
 	}
 
-	function alternarCasillas() {
-		document.body.classList.toggle("nsh-force-checks");
-		var fijo = document.body.classList.contains("nsh-force-checks");
-		document.body.classList.toggle("nsh-show-checks", fijo || seleccion.cuantos() > 0);
-		util.aviso(fijo ? "Las casillas quedan siempre visibles" : "Las casillas aparecen al pasar el mouse");
-	}
-
 	function bloqueVacioBajoElCursor(t) {
 		if (!t || !t.classList || !t.classList.contains("input-for-statement")) { return null; }
 		if ((t.value || "") !== "") { return null; }
@@ -92,6 +85,7 @@ var atajos = (function () {
 		var ctrl = e.ctrlKey || e.metaKey;
 		var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
 		var enUml = typeof uml !== "undefined" && uml.activo();
+		var soloVer = typeof nube !== "undefined" && nube.soloLectura();
 
 		if (k === "Escape") {
 			if (document.getElementById("nshHelp")) { cerrarAyuda(); return; }
@@ -105,6 +99,9 @@ var atajos = (function () {
 		}
 
 		if (k === "F1") { e.preventDefault(); ayuda(); return; }
+
+		if (soloVer && !enUml && (k === "Delete" || k === "Backspace" || k === "F2" ||
+			(ctrl && !e.shiftKey && k.length === 1 && "zyxvdn".indexOf(k) !== -1))) { return; }
 
 		if (k === "F2" && !escribiendo && !enUml) {
 			e.preventDefault();
@@ -153,7 +150,7 @@ var atajos = (function () {
 		if (ctrl && k === "n" && !e.shiftKey) { e.preventDefault(); nuevoMetodo(); return; }
 		if (ctrl && e.shiftKey && k === "u") { e.preventDefault(); uml.tocarVista(); return; }
 		if (ctrl && e.shiftKey && k === "d") { e.preventDefault(); tema.tocar(); return; }
-		if (ctrl && e.shiftKey && k === "c") { e.preventDefault(); alternarCasillas(); return; }
+		if (ctrl && e.shiftKey && k === "c") { e.preventDefault(); configuracion.tocarCasillas(); return; }
 		if (enUml) { return; }
 		if (k === "Tab" && ctrl) { e.preventDefault(); solapas.pasar(e.shiftKey ? -1 : 1); return; }
 		if (ctrl && (k === "0" || k === "9" || k === "+" || k === "-" || k === "=")) {

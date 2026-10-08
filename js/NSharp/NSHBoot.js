@@ -59,15 +59,6 @@ var arranque = (function () {
 		var enUml = function () { return typeof uml !== "undefined" && uml.activo(); };
 		if (a) { a.addEventListener("click", function () { if (enUml()) { uml.deshacer(); } else { historial.atras(); } }); }
 		if (b) { b.addEventListener("click", function () { if (enUml()) { uml.rehacer(); } else { historial.adelante(); } }); }
-		var c = document.getElementById("nshChecksBtn");
-		if (c) {
-			c.addEventListener("click", function () {
-				var fijo = document.body.classList.toggle("nsh-force-checks");
-				document.body.classList.toggle("nsh-show-checks", fijo || seleccion.cuantos() > 0);
-				c.classList.toggle("nsh-active", fijo);
-				util.aviso(fijo ? "Las casillas quedan siempre visibles" : "Las casillas aparecen al pasar el mouse");
-			});
-		}
 	}
 
 	o.arrancar = function () {
@@ -85,8 +76,12 @@ var arranque = (function () {
 		lupa.iniciar();
 		atajos.iniciar();
 		creditos.iniciar();
+		configuracion.iniciar();
 		archivos.iniciar();
 		uml.iniciar();
+		cuenta.iniciar();
+		nube.iniciar();
+		compartir.iniciar();
 		botones();
 		menus();
 		paneles();

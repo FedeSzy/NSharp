@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function correo() {
+      return request.auth.token.email.lower();
+    }
+
+    function esDueno(p) {
+      return request.auth != null && p.dueno == request.auth.uid;
+    }
+
+    function esEditor(p) {
+      return request.auth != null
+        && (p.enlace == "editor" || (request.auth.token.email != null && correo() in p.editores));
+    }
+
+    function esLector(p) {
+      return p.enlace == "lector" || p.enlace == "editor"
+        || (request.auth != null && request.auth.token.email != null && correo() in p.lectores);
+    }
+
+    function edita(p) {
+      return esDueno(p) || esEditor(p);
+    }
+
+    function lee(p) {
+      return edita(p) || esLector(p);
+    }
+
+    function proyecto(pid) {
+      return get(/databases/$(database)/documents/proyectos/$(pid)).data;
+    }
+
+    match /usuarios/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /proyectos/{pid} {
+      allow read: if lee(resource.data);
+
+      allow create: if request.auth != null
+        && request.resource.data.dueno == request.auth.uid
+        && request.resource.data.editores is list
+        && request.resource.data.lectores is list
+        && request.resource.data.enlace in ["nadie", "lector", "editor"];
+
+      allow update: if (esDueno(resource.data)
+          && request.resource.data.dueno == resource.data.dueno
+          && request.resource.data.editores is list
+          && request.resource.data.lectores is list
+          && request.resource.data.enlace in ["nadie", "lector", "editor"])
+        || (edita(resource.data)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(["dueno", "duenoNombre", "duenoCorreo", "editores", "lectores", "enlace", "creado"]));
+
+      allow delete: if esDueno(resource.data);
+
+      match /metodos/{mid} {
+        allow read: if lee(proyecto(pid));
+        allow write: if edita(proyecto(pid));
+      }
+
+      match /uml/{eid} {
+        allow read: if lee(proyecto(pid));
+        allow write: if edita(proyecto(pid));
+      }
+
+      match /gente/{persona} {
+        allow read: if lee(proyecto(pid));
+        allow create, update: if request.auth != null && request.auth.uid == persona && lee(proyecto(pid));
+        allow delete: if request.auth != null
+          && (request.auth.uid == persona || proyecto(pid).dueno == request.auth.uid);
+      }
+    }
+  }
+}
