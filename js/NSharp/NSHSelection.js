@@ -171,6 +171,7 @@ var seleccion = (function () {
 	function eliminarElegidos(callado) {
 		if (vacia()) { return false; }
 		var l = padres();
+		if (typeof nube !== "undefined" && nube.hayBloqueados(l)) { return false; }
 		l.forEach(quitarBloque);
 		limpiarSeleccion();
 		comas();
@@ -215,6 +216,7 @@ var seleccion = (function () {
 	}
 
 	function cortar() {
+		if (typeof nube !== "undefined" && nube.hayBloqueados(padres())) { return false; }
 		if (!copiar(true)) {
 			util.aviso("Elegí al menos un bloque para cortar");
 			return false;

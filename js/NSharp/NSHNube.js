@@ -2,8 +2,11 @@ var nube = (function () {
 	var o = {};
 
 	var ESPERA = 1200;
-	var LATIDO = 25000;
-	var VIGENCIA = 70000;
+	var RAPIDO = 1000;
+	var SOLO = 4000;
+	var CADA_EDITADO = 60000;
+	var LATIDO = 60000;
+	var VIGENCIA = 150000;
 	var TANDA = 450;
 	var COLORES = ["#e53935", "#8e24aa", "#3949ab", "#039be5", "#00897b", "#7cb342", "#f4511e", "#6d4c41", "#d81b60", "#5e35b1"];
 
@@ -11,6 +14,8 @@ var nube = (function () {
 	var gente = {};
 	var firmaGente = "";
 	var pedido = null;
+	var llegados = {};
+	var ultimoAviso = 0;
 
 	function db() { return cuenta.base(); }
 
@@ -43,7 +48,7 @@ var nube = (function () {
 		var c = cuenta.correo();
 		if (u && x.dueno === u.uid) { return "dueno"; }
 		if (u && ((x.editores || []).indexOf(c) !== -1 || x.enlace === "editor")) { return "editor"; }
-		if ((c && (x.lectores || []).indexOf(c) !== -1) || x.enlace === "lector" || x.enlace === "editor") { return "lector"; }
+		if (u && ((x.lectores || []).indexOf(c) !== -1 || x.enlace === "lector" || x.enlace === "editor")) { return "lector"; }
 		return null;
 	}
 
@@ -123,6 +128,113 @@ var nube = (function () {
 		return { v: 1, cosas: ordenar(cosas), lineas: ordenar(lineas), mem: mem };
 	}
 
+	function cajaDe(html) {
+		var c = document.createElement("div");
+		c.innerHTML = html || "";
+		return c;
+	}
+
+	function entradas(raiz) {
+		var vistas = {};
+		return Array.prototype.map.call(raiz.querySelectorAll(".input-for-statement"), function (i) {
+			var u = i.closest("[data-b]");
+			var id = (u && raiz.contains(u)) ? u.getAttribute("data-b") : "raiz";
+			vistas[id] = (vistas[id] || 0) + 1;
+			return { i: i, k: id + "#" + vistas[id] };
+		});
+	}
+
+	function firma(caja) {
+		var c = caja.cloneNode(true);
+		Array.prototype.forEach.call(c.querySelectorAll(".input-for-statement"), function (i) {
+			i.removeAttribute("value");
+			i.removeAttribute("style");
+		});
+		return c.innerHTML;
+	}
+
+	function valores(caja) {
+		var r = {};
+		entradas(caja).forEach(function (x) { r[x.k] = x.i.getAttribute("value") || ""; });
+		return r;
+	}
+
+	function diferencias(antes, despues) {
+		var r = {};
+		Object.keys(despues).forEach(function (k) { if (despues[k] !== antes[k]) { r[k] = despues[k]; } });
+		return r;
+	}
+
+	function ponerValores(caja, cambios) {
+		entradas(caja).forEach(function (x) {
+			if (!(x.k in cambios)) { return; }
+			x.i.setAttribute("value", cambios[x.k]);
+			x.i.style.width = (cambios[x.k].length + 0.5) + "ch";
+		});
+	}
+
+	function fusionarCodigo(cb, cm, cs) {
+		if (cm === cb || cm === cs) { return cs; }
+		if (cs === cb) { return cm; }
+		var b = cajaDe(cb), m = cajaDe(cm), s = cajaDe(cs);
+		var fb = firma(b);
+		var vb = valores(b);
+		if (firma(m) === fb) {
+			ponerValores(s, diferencias(vb, valores(m)));
+			return s.innerHTML;
+		}
+		if (firma(s) === fb) {
+			ponerValores(m, diferencias(vb, valores(s)));
+			return m.innerHTML;
+		}
+		return cm;
+	}
+
+	function fusionarTexto(b, m, s) {
+		if (!b || !m || !s) { return m || s; }
+		var xb = JSON.parse(b), xm = JSON.parse(m), xs = JSON.parse(s);
+		var code = fusionarCodigo(xb.code, xm.code, xs.code);
+		var caja = cajaDe(code);
+		var cl = caja.querySelector(".class-name>.input-for-statement");
+		var no = caja.querySelector(".method-name>.input-for-statement");
+		return textoMetodo({
+			clase: cl ? (cl.getAttribute("value") || "") : xm.clase,
+			nombre: no ? (no.getAttribute("value") || "") : xm.nombre,
+			code: code,
+			pos: xm.pos !== xb.pos ? xm.pos : xs.pos,
+			carpeta: xm.carpeta !== xb.carpeta ? xm.carpeta : xs.carpeta
+		});
+	}
+
+	function aplicarEnVivo(d) {
+		var c = lienzo.container;
+		var a = document.activeElement;
+		var enCampo = !!a && c.contains(a) && a.classList.contains("input-for-statement");
+		var foco = enCampo ? entradas(c).filter(function (x) { return x.i === a; })[0].k : null;
+		var desde = enCampo ? a.selectionStart : null;
+		var hasta = enCampo ? a.selectionEnd : null;
+		var nueva = cajaDe(d.code);
+		if (firma(nueva) === firma(cajaDe(util.htmlLimpio(c)))) {
+			var v = valores(nueva);
+			entradas(c).forEach(function (x) {
+				var val = v[x.k];
+				if (x.i === a || val === undefined || x.i.value === val) { return; }
+				x.i.value = val;
+				x.i.setAttribute("value", val);
+				medirCampo(x.i);
+			});
+			lienzo.refresh();
+		} else {
+			lienzo.setDiagram(d);
+			var otra = foco ? entradas(c).filter(function (x) { return x.k === foco; })[0] : null;
+			if (otra) {
+				otra.i.focus();
+				try { otra.i.setSelectionRange(desde, hasta); } catch (x) { }
+			}
+		}
+		historial.reset(d);
+	}
+
 	function reconstruir(e, mapa, aplicadas) {
 		var activa = esActiva(e);
 		var mets = solapas.lista(e);
@@ -192,17 +304,10 @@ var nube = (function () {
 		} else if (!actual) {
 			lienzo.setDiagram(null);
 		} else if (aplicadas["m/" + actual.nube]) {
-			lienzo.setDiagram(actual);
-			historial.reset(actual);
+			aplicarEnVivo(actual);
 		}
 		arbol.activar(lienzo.actualDiagram);
 		util.actualizarTitulo();
-	}
-
-	function editandoLienzo() {
-		var a = document.activeElement;
-		if (a && lienzo.container.contains(a) && util.escribiendo(a)) { return true; }
-		return document.body.classList.contains("nsh-dragging");
 	}
 
 	function ocupado(e, k) {
@@ -210,7 +315,7 @@ var nube = (function () {
 		if (k.indexOf("u/") === 0) { return uml.ocupado(); }
 		if (k.indexOf("m/") === 0) {
 			var d = lienzo.actualDiagram;
-			return !!d && "m/" + d.nube === k && editandoLienzo();
+			return !!d && "m/" + d.nube === k && document.body.classList.contains("nsh-dragging");
 		}
 		return false;
 	}
@@ -221,14 +326,18 @@ var nube = (function () {
 		var libre = !puedeEditar(e);
 		var local = null;
 		var aplicadas = {};
+		var fusiones = {};
 		var hay = false;
 		n.atrasado = false;
 		var claves = Object.keys(n.remoto).concat(Object.keys(n.base).filter(function (k) { return !(k in n.remoto); }));
 		claves.forEach(function (k) {
 			if (n.remoto[k] === n.base[k]) { return; }
 			if (!local) { local = fotoLocal(e); }
-			if (!libre && local[k] !== n.base[k]) { return; }
 			if (ocupado(e, k)) { n.atrasado = true; return; }
+			if (!libre && local[k] !== n.base[k]) {
+				if (k.indexOf("m/") !== 0 || !n.base[k] || local[k] === undefined || n.remoto[k] === undefined) { return; }
+				fusiones[k] = fusionarTexto(n.base[k], local[k], n.remoto[k]);
+			}
 			aplicadas[k] = true;
 			hay = true;
 		});
@@ -237,7 +346,10 @@ var nube = (function () {
 		var mapa = {};
 		Object.keys(local).forEach(function (k) { mapa[k] = local[k]; });
 		Object.keys(aplicadas).forEach(function (k) {
-			if (n.remoto[k] === undefined) {
+			if (k in fusiones) {
+				mapa[k] = fusiones[k];
+				n.base[k] = n.remoto[k];
+			} else if (n.remoto[k] === undefined) {
 				delete mapa[k];
 				delete n.base[k];
 			} else {
@@ -301,6 +413,70 @@ var nube = (function () {
 		});
 	}
 
+	function transaccion(e, claves, local) {
+		var n = e.nube;
+		var ref = refProyecto(n.id);
+		var enviados = {};
+		var bases = {};
+		claves.forEach(function (k) {
+			enviados[k] = local[k];
+			bases[k] = n.base[k];
+		});
+		n.transando = true;
+		n.subiendo++;
+		n.error = null;
+		estado();
+		db().runTransaction(function (tx) {
+			var refs = claves.map(function (k) { return ref.collection("metodos").doc(k.slice(2)); });
+			return Promise.all(refs.map(function (r) { return tx.get(r); })).then(function (snaps) {
+				var finales = {};
+				snaps.forEach(function (s, i) {
+					var k = claves[i];
+					var fin = enviados[k];
+					if (s.exists) {
+						var suyo = textoMetodo(s.data());
+						if (suyo !== bases[k] && suyo !== fin) { fin = fusionarTexto(bases[k], fin, suyo); }
+					}
+					var x = JSON.parse(fin);
+					x.editado = ahora();
+					x.por = cuenta.nombre();
+					tx.set(refs[i], x);
+					finales[k] = fin;
+				});
+				if (tocaEditado(n)) { tx.update(ref, { editado: ahora(), por: cuenta.nombre() }); }
+				return finales;
+			});
+		}).then(function (finales) {
+			n.transando = false;
+			n.subiendo--;
+			Object.keys(finales).forEach(function (k) {
+				n.base[k] = enviados[k];
+				n.remoto[k] = finales[k];
+			});
+			conciliar(e);
+			if (!n.subiendo && !n.reloj) { guardado(e); }
+			estado();
+		}).catch(function (err) {
+			n.transando = false;
+			n.subiendo--;
+			var codigo = err && err.code ? err.code : "";
+			if (codigo === "unavailable" || codigo === "failed-precondition" || codigo === "aborted") {
+				escribir(e, claves.map(function (k) {
+					n.base[k] = enviados[k];
+					n.remoto[k] = enviados[k];
+					return operacion(e, k, enviados[k]);
+				}));
+				return;
+			}
+			n.error = err;
+			console.error(err);
+			estado();
+			if (codigo === "permission-denied") {
+				util.aviso("No tenés permiso para editar este proyecto", 3200);
+			}
+		});
+	}
+
 	function guardado(e) {
 		if (esActiva(e)) { util.marcarGuardado(); } else { e.sucio = false; }
 		solapas.pintar();
@@ -326,31 +502,52 @@ var nube = (function () {
 			estado();
 			return;
 		}
-		var ops = claves.map(function (k) {
-			var v = local[k];
-			if (v === undefined) {
-				delete n.base[k];
-				delete n.remoto[k];
-			} else {
-				n.base[k] = v;
-				n.remoto[k] = v;
-			}
-			return operacion(e, k, v);
+		var juntas = !acompanado(e) ? [] : claves.filter(function (k) {
+			return k.indexOf("m/") === 0 && local[k] !== undefined && n.base[k] !== undefined;
 		});
-		if (claves.indexOf("p") === -1) {
-			ops.push({ ref: refProyecto(n.id), actualizar: true, datos: { editado: ahora(), por: cuenta.nombre() } });
+		var resto = claves.filter(function (k) { return juntas.indexOf(k) === -1; });
+		if (juntas.length && n.transando) {
+			juntas = [];
+			programar(e);
 		}
-		escribir(e, ops);
+		if (resto.length) {
+			var ops = resto.map(function (k) {
+				var v = local[k];
+				if (v === undefined) {
+					delete n.base[k];
+					delete n.remoto[k];
+				} else {
+					n.base[k] = v;
+					n.remoto[k] = v;
+				}
+				return operacion(e, k, v);
+			});
+			if (resto.indexOf("p") === -1 && tocaEditado(n)) {
+				ops.push({ ref: refProyecto(n.id), actualizar: true, datos: { editado: ahora(), por: cuenta.nombre() } });
+			}
+			escribir(e, ops);
+		}
+		if (juntas.length) { transaccion(e, juntas, local); }
+	}
+
+	function acompanado(e) {
+		return esActiva(e) && presente.e === e && vivos().length > 0;
+	}
+
+	function tocaEditado(n) {
+		var t = Date.now();
+		if (t - (n.editadoEn || 0) < CADA_EDITADO) { return false; }
+		n.editadoEn = t;
+		return true;
 	}
 
 	function programar(e) {
 		var n = e && e.nube;
-		if (!n || !puedeEditar(e)) { return; }
-		if (n.reloj) { window.clearTimeout(n.reloj); }
+		if (!n || !puedeEditar(e) || n.reloj) { return; }
 		n.reloj = window.setTimeout(function () {
 			n.reloj = null;
 			subir(e);
-		}, ESPERA);
+		}, acompanado(e) ? RAPIDO : SOLO);
 		estado();
 		solapas.pintar();
 	}
@@ -516,7 +713,7 @@ var nube = (function () {
 			if (codigo === "permission-denied" || codigo === "not-found") {
 				if (!yo()) {
 					pedido = pid;
-					util.aviso("Ese proyecto es privado: iniciá sesión con Google (arriba a la derecha) para abrirlo", 5200);
+					util.aviso("Para abrir el proyecto iniciá sesión con tu cuenta de ORT (arriba a la derecha)", 5200);
 				} else {
 					alert("Ese proyecto no existe o no tenés permiso para verlo.\n" +
 						"Pedile a quien lo compartió que te agregue con " + cuenta.correo() + ".");
@@ -596,9 +793,12 @@ var nube = (function () {
 		var caja = document.getElementById("nshGente");
 		if (!caja) { return; }
 		var ids = vivos();
-		var firma = ids.map(function (uid) { return uid + gente[uid].metodo + gente[uid].vista + gente[uid].foto; }).join("|");
-		if (firma === firmaGente) { return; }
-		firmaGente = firma;
+		var sello = ids.map(function (uid) {
+			var x = gente[uid];
+			return uid + x.metodo + x.vista + x.foto + (x.bloque || "");
+		}).join("|");
+		if (sello === firmaGente) { return; }
+		firmaGente = sello;
 		caja.innerHTML = "";
 		ids.slice(0, 5).forEach(function (uid) {
 			var x = gente[uid];
@@ -618,8 +818,88 @@ var nube = (function () {
 		marcarArbol();
 	}
 
+	function editando(uid) {
+		var x = gente[uid];
+		var d = lienzo.actualDiagram;
+		return !!x && !!d && x.vista !== "uml" && !!x.bloque && x.metodo === d.nube;
+	}
+
+	function quienEdita(u) {
+		if (!u || !esActiva(presente.e)) { return null; }
+		var id = u.getAttribute("data-b");
+		var uid = vivos().filter(function (x) { return editando(x) && gente[x].bloque === id; })[0];
+		return uid ? gente[uid] : null;
+	}
+
+	function avisarBloqueo(x) {
+		var t = Date.now();
+		if (t - ultimoAviso < 1500) { return; }
+		ultimoAviso = t;
+		util.aviso((x.nombre || "Alguien") + " está editando este bloque");
+	}
+
+	function pintarBloqueos() {
+		var st = document.getElementById("nshBloqueos");
+		if (!st) {
+			st = document.createElement("style");
+			st.id = "nshBloqueos";
+			document.head.appendChild(st);
+		}
+		var reglas = [];
+		vivos().filter(editando).forEach(function (uid) {
+			var x = gente[uid];
+			var color = colorDe(uid);
+			var sel = '#actualDiagram [data-b="' + String(x.bloque).replace(/["\\]/g, "") + '"]';
+			var nombre = JSON.stringify((x.nombre || "Alguien").split(" ")[0].replace(/[\u0000-\u001f]/g, ""));
+			reglas.push(sel + "{outline:3px solid " + color + ";outline-offset:2px;position:relative}");
+			reglas.push(sel + "::after{content:" + nombre + ";position:absolute;top:-20px;right:-4px;padding:1px 7px;" +
+				"border-radius:5px 5px 0 5px;background:" + color + ";color:#fff;font:600 11px/16px Verdana,sans-serif;" +
+				"white-space:nowrap;pointer-events:none;z-index:6}");
+			reglas.push(sel + " .input-for-statement{cursor:not-allowed}");
+			reglas.push(sel + " [data-b] .input-for-statement{cursor:auto}");
+		});
+		var txt = reglas.join("\n");
+		if (st.textContent !== txt) { st.textContent = txt; }
+	}
+
+	function frenar(ev) {
+		var x = quienEdita(util.unidadDe(ev.target));
+		if (!x) { return; }
+		ev.preventDefault();
+		ev.stopPropagation();
+		if (ev.type === "focusin" && ev.target.blur) { ev.target.blur(); }
+		avisarBloqueo(x);
+	}
+
+	function hayBloqueados(nodos) {
+		var x = null;
+		(nodos || []).some(function (n) {
+			var u = [n].concat(Array.prototype.slice.call(n.querySelectorAll ? n.querySelectorAll("[data-b]") : []));
+			return u.some(function (b) {
+				x = quienEdita(b);
+				return !!x;
+			});
+		});
+		if (x) { avisarBloqueo(x); }
+		return !!x;
+	}
+
+	function revisarLlegadas(avisar) {
+		var ahora = vivos();
+		var nuevos = ahora.filter(function (uid) { return !llegados[uid]; });
+		if (avisar) {
+			nuevos.forEach(function (uid) {
+				util.aviso((gente[uid].nombre || "Alguien") + " se unió al proyecto", 3200);
+			});
+		}
+		if (avisar && nuevos.length) { window.setTimeout(function () { latir(true); }, 0); }
+		llegados = {};
+		ahora.forEach(function (uid) { llegados[uid] = true; });
+	}
+
 	function marcarArbol() {
 		var e = solapas.actual();
+		pintarBloqueos();
 		util.qq(".nsh-row-gente").forEach(function (n) { n.remove(); });
 		if (!e || !e.nube) { return; }
 		var ids = vivos();
@@ -646,16 +926,20 @@ var nube = (function () {
 		var e = presente.e;
 		if (!e || !e.nube || !yo()) { return; }
 		var d = lienzo.actualDiagram;
+		var a = document.activeElement;
+		var u = (a && lienzo.container.contains(a) && util.escribiendo(a)) ? util.unidadDe(a) : null;
 		var x = {
 			nombre: cuenta.nombre(),
 			foto: yo().photoURL || "",
 			metodo: d && d.nube ? d.nube : "",
 			vista: uml.activo() ? "uml" : "ns",
+			bloque: u && !uml.activo() ? u.getAttribute("data-b") : "",
 			t: Date.now()
 		};
-		var firma = x.metodo + "|" + x.vista;
-		if (!forzar && firma === presente.firma && x.t - presente.t < LATIDO) { return; }
-		presente.firma = firma;
+		var sello = x.metodo + "|" + x.vista + "|" + x.bloque;
+		var vence = x.t - presente.t >= LATIDO;
+		if (!forzar && !vence && (sello === presente.firma || !vivos().length)) { return; }
+		presente.firma = sello;
 		presente.t = x.t;
 		refProyecto(e.nube.id).collection("gente").doc(yo().uid).set(x).catch(function () { });
 	}
@@ -672,7 +956,9 @@ var nube = (function () {
 		presente.e = null;
 		presente.firma = "";
 		gente = {};
+		llegados = {};
 		pintarGente();
+		pintarBloqueos();
 	}
 
 	function entrarPresencia(e) {
@@ -681,11 +967,15 @@ var nube = (function () {
 		if (!e || !e.nube || !yo()) { return; }
 		presente.e = e;
 		latir(true);
+		var primera = true;
 		presente.sub = refProyecto(e.nube.id).collection("gente").onSnapshot(function (s) {
 			var u = yo();
 			gente = {};
 			s.forEach(function (doc) { if (!u || doc.id !== u.uid) { gente[doc.id] = doc.data(); } });
+			revisarLlegadas(!primera);
+			primera = false;
 			pintarGente();
+			pintarBloqueos();
 		}, function () { });
 	}
 
@@ -754,7 +1044,6 @@ var nube = (function () {
 			salirPresencia();
 			solapas.todas().forEach(function (e) {
 				if (!e.nube) { return; }
-				if (rolDe(e) === "lector") { return; }
 				soltarEscuchas(e);
 				e.nube = null;
 				solapas.cerrar(e, true);
@@ -787,8 +1076,15 @@ var nube = (function () {
 		var c = lienzo.container;
 		if (c) {
 			c.addEventListener("input", alCambio);
+			c.addEventListener("focusin", function () { window.setTimeout(latir, 0); });
 			c.addEventListener("focusout", function () {
-				window.setTimeout(function () { conciliar(solapas.actual()); }, 0);
+				window.setTimeout(function () {
+					latir();
+					conciliar(solapas.actual());
+				}, 0);
+			});
+			["pointerdown", "mousedown", "dblclick", "focusin"].forEach(function (t) {
+				c.addEventListener(t, frenar, true);
 			});
 		}
 		var t = document.getElementById("umlText");
@@ -812,7 +1108,9 @@ var nube = (function () {
 			var e = solapas.actual();
 			if (e && e.nube && e.nube.atrasado) { conciliar(e); }
 			if (document.visibilityState === "visible") { latir(false); }
+			revisarLlegadas(false);
 			pintarGente();
+			pintarBloqueos();
 		}, 2000);
 
 		var pid = new URLSearchParams(window.location.search).get("p");
@@ -829,6 +1127,7 @@ var nube = (function () {
 		return !!(e && e.nube && !puedeEditar(e));
 	};
 	o.pendiente = pendiente;
+	o.hayBloqueados = hayBloqueados;
 	o.hayPendientes = function () { return solapas.todas().some(pendiente); };
 	o.subirNuevo = subirNuevo;
 	o.abrir = abrir;

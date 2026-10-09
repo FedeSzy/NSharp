@@ -3,8 +3,8 @@ var compartir = (function () {
 
 	var ENLACES = [
 		{ id: "nadie", label: "Solo las personas agregadas" },
-		{ id: "lector", label: "Cualquiera con el link puede ver" },
-		{ id: "editor", label: "Cualquiera con el link puede editar" }
+		{ id: "lector", label: "Cualquiera de ORT con el link puede ver" },
+		{ id: "editor", label: "Cualquiera de ORT con el link puede editar" }
 	];
 
 	var viendo = null;
@@ -52,9 +52,17 @@ var compartir = (function () {
 		var v = caja();
 		var i = v.querySelector(".nsh-comp-correo");
 		var r = v.querySelector(".nsh-comp-rol");
-		var c = (i.value || "").trim().toLowerCase();
+		var c = (i.value || "").trim().toLowerCase().replace(/\./g, function (p, pos, todo) {
+			return todo.indexOf("@") === -1 ? "" : p;
+		});
+		if (/^\d{6,9}$/.test(c)) { c = c + "@est.ort.edu.ar"; }
 		if (!correoValido(c)) {
-			util.aviso("Escribí un correo válido");
+			util.aviso("Escribí el DNI del alumno o un correo de ORT");
+			i.focus();
+			return;
+		}
+		if (!cuenta.permitido(c)) {
+			util.aviso("Solo se puede compartir con cuentas de ORT (@ort.edu.ar o @est.ort.edu.ar)", 3600);
 			i.focus();
 			return;
 		}
@@ -128,7 +136,7 @@ var compartir = (function () {
 		v.innerHTML = '<div class="nsh-dialogo-card">' +
 			'<h3><i class="fa fa-user-plus"></i> Compartir «<span class="nsh-comp-nombre"></span>»</h3>' +
 			'<div class="nsh-comp-agregar">' +
-			'<input type="email" class="nsh-comp-correo" placeholder="Correo de Google de la persona" autocomplete="off" />' +
+			'<input type="text" class="nsh-comp-correo" placeholder="DNI del alumno o correo de ORT" autocomplete="off" />' +
 			'<select class="nsh-comp-rol"><option value="editor">Editor</option><option value="lector">Lector</option></select>' +
 			'<button type="button" class="nsh-boton nsh-comp-sumar">Agregar</button>' +
 			"</div>" +
@@ -143,8 +151,8 @@ var compartir = (function () {
 			'<input type="text" class="nsh-comp-link" readonly />' +
 			'<button type="button" class="nsh-boton nsh-comp-copiar"><i class="fa fa-link"></i> Copiar link</button>' +
 			"</div>" +
-			'<p class="nsh-comp-nota">Las personas agregadas tienen que iniciar sesión con ese mismo correo de Google. ' +
-			"Mandales el link para que abran el proyecto.</p>" +
+			'<p class="nsh-comp-nota">Si escribís solo el DNI se completa como <b>DNI@est.ort.edu.ar</b>. ' +
+			"Las personas agregadas tienen que iniciar sesión con esa cuenta de ORT; mandales el link para que abran el proyecto.</p>" +
 			'<div class="nsh-dialogo-pie"><button type="button" class="nsh-boton-sec" data-nsh-cerrar="1">Listo</button></div>' +
 			"</div>";
 

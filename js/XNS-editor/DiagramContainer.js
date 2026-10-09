@@ -24,6 +24,7 @@ function Lienzo() {
 
 	this.refresh = function () {
 		if (this.actualDiagram) {
+			util.marcarBloques(this.container);
 			this.actualDiagram.setData(this.diagramClass(), this.diagramName(), util.htmlLimpio(this.container));
 		}
 	}
