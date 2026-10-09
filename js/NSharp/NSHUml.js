@@ -330,6 +330,9 @@ var uml = (function () {
 
 	function borrarElegido() {
 		if (!elegido) { return; }
+		var pegadas = relaciones.filter(function (x) { return x.de === elegido || x.a === elegido; })
+			.map(function (x) { return x.id; });
+		if (ajeno(pegadas)) { return; }
 		var l = lineaPorId(elegido);
 		if (l) {
 			relaciones = relaciones.filter(function (x) { return x.id !== elegido; });
@@ -763,7 +766,12 @@ var uml = (function () {
 		}
 	}
 
+	function ajeno(ids) {
+		return typeof nube !== "undefined" && nube.umlBloqueado(ids);
+	}
+
 	function elegir(id) {
+		if (id && id !== elegido && ajeno([id])) { return; }
 		elegido = id;
 		pintar();
 	}
@@ -1109,6 +1117,7 @@ var uml = (function () {
 	}
 
 	function traerDelNs() {
+		if (ajeno(null)) { return; }
 		actualizarDiagrama();
 		var carpetas = clases.todas();
 		if (!carpetas.length) {
@@ -1337,6 +1346,7 @@ var uml = (function () {
 	}
 
 	function abrirUxf(texto, nombre) {
+		if (ajeno(null)) { return false; }
 		var d;
 		try {
 			d = uxf.leer(texto);
@@ -1568,19 +1578,22 @@ var uml = (function () {
 		olvidarHistoria();
 	};
 
-	o.ocupado = function () {
-		var t = panel();
-		return !!arrastreActual || (!!t && document.activeElement === t);
-	};
-
 	o.recibir = function (d) {
 		leerDibujo(d);
 		if (elegido && !porId(elegido) && !lineaPorId(elegido)) { elegido = null; }
 		if (desde && !porId(desde)) { desde = null; uniendo = false; }
+		if (arrastreActual && arrastreActual.c) {
+			arrastreActual.c = porId(arrastreActual.c.id) || arrastreActual.c;
+		}
+		if (arrastreActual && arrastreActual.l) {
+			arrastreActual.l = lineaPorId(arrastreActual.l.id) || arrastreActual.l;
+		}
 		if (vista) { pintar(); }
-		ultimaFoto = foto();
-		botonesHistoria();
+		olvidarHistoria();
 	};
+
+	o.elegido = function () { return elegido; };
+	o.uniendo = function () { return uniendo; };
 
 	return o;
 }());

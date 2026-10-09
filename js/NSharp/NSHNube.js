@@ -311,7 +311,6 @@ var nube = (function () {
 
 	function ocupado(e, k) {
 		if (!esActiva(e)) { return false; }
-		if (k.indexOf("u/") === 0) { return uml.ocupado(); }
 		if (k.indexOf("m/") === 0) {
 			var d = lienzo.actualDiagram;
 			return !!d && "m/" + d.nube === k && document.body.classList.contains("nsh-dragging");
@@ -781,7 +780,7 @@ var nube = (function () {
 		var ids = vivos();
 		var sello = ids.map(function (uid) {
 			var x = gente[uid];
-			return uid + x.metodo + x.vista + x.foto + (x.bloque || "");
+			return uid + x.metodo + x.vista + x.foto + (x.bloque || "") + (x.uml || "");
 		}).join("|");
 		if (sello === firmaGente) { return; }
 		firmaGente = sello;
@@ -817,11 +816,45 @@ var nube = (function () {
 		return uid ? gente[uid] : null;
 	}
 
-	function avisarBloqueo(x) {
+	function avisarBloqueo(x, que) {
 		var t = Date.now();
 		if (t - ultimoAviso < 1500) { return; }
 		ultimoAviso = t;
-		util.aviso((x.nombre || "Alguien") + " está editando este bloque");
+		util.aviso((x.nombre || "Alguien") + " está editando " + (que || "este bloque"));
+	}
+
+	function editandoUml(uid) {
+		var x = gente[uid];
+		return !!x && x.vista === "uml" && !!x.uml && esActiva(presente.e);
+	}
+
+	function quienEditaUml(id) {
+		var uid = vivos().filter(function (x) { return editandoUml(x) && gente[x].uml === id; })[0];
+		return uid ? gente[uid] : null;
+	}
+
+	function umlBloqueado(ids) {
+		var x = null;
+		if (ids === null) {
+			var uid = vivos().filter(editandoUml)[0];
+			if (uid) {
+				avisarBloqueo(gente[uid], "el diagrama UML");
+				return true;
+			}
+			return false;
+		}
+		ids.some(function (id) {
+			x = quienEditaUml(id);
+			return !!x;
+		});
+		if (x) { avisarBloqueo(x, "ese elemento"); }
+		return !!x;
+	}
+
+	function etiqueta(sel, color, nombre) {
+		return sel + "::after{content:" + nombre + ";position:absolute;top:-20px;right:-4px;padding:1px 7px;" +
+			"border-radius:5px 5px 0 5px;background:" + color + ";color:#fff;font:600 11px/16px Verdana,sans-serif;" +
+			"white-space:nowrap;pointer-events:none;z-index:6}";
 	}
 
 	function pintarBloqueos() {
@@ -832,20 +865,39 @@ var nube = (function () {
 			document.head.appendChild(st);
 		}
 		var reglas = [];
-		vivos().filter(editando).forEach(function (uid) {
+		vivos().forEach(function (uid) {
 			var x = gente[uid];
 			var color = colorDe(uid);
-			var sel = '#actualDiagram [data-b="' + String(x.bloque).replace(/["\\]/g, "") + '"]';
 			var nombre = JSON.stringify((x.nombre || "Alguien").split(" ")[0].replace(/[\u0000-\u001f]/g, ""));
-			reglas.push(sel + "{outline:3px solid " + color + ";outline-offset:2px;position:relative}");
-			reglas.push(sel + "::after{content:" + nombre + ";position:absolute;top:-20px;right:-4px;padding:1px 7px;" +
-				"border-radius:5px 5px 0 5px;background:" + color + ";color:#fff;font:600 11px/16px Verdana,sans-serif;" +
-				"white-space:nowrap;pointer-events:none;z-index:6}");
-			reglas.push(sel + " .input-for-statement{cursor:not-allowed}");
-			reglas.push(sel + " [data-b] .input-for-statement{cursor:auto}");
+			if (editando(uid)) {
+				var sel = '#actualDiagram [data-b="' + String(x.bloque).replace(/["\\]/g, "") + '"]';
+				reglas.push(sel + "{outline:3px solid " + color + ";outline-offset:2px;position:relative}");
+				reglas.push(etiqueta(sel, color, nombre));
+				reglas.push(sel + " .input-for-statement{cursor:not-allowed}");
+				reglas.push(sel + " [data-b] .input-for-statement{cursor:auto}");
+			}
+			if (editandoUml(uid)) {
+				var id = String(x.uml).replace(/["\\]/g, "");
+				var caja = '#umlCanvas .uml-caja[data-uml-id="' + id + '"]';
+				reglas.push(caja + "{outline:3px solid " + color + ";outline-offset:3px;overflow:visible;cursor:not-allowed}");
+				reglas.push(etiqueta(caja, color, nombre));
+				reglas.push('#umlSvg .uml-golpe[data-uml-rel="' + id + '"]{stroke:' + color + ";stroke-opacity:.45;cursor:not-allowed}");
+			}
 		});
 		var txt = reglas.join("\n");
 		if (st.textContent !== txt) { st.textContent = txt; }
+	}
+
+	function frenarUml(ev) {
+		if (uml.uniendo()) { return; }
+		var t = ev.target;
+		var caja = t.closest ? t.closest(".uml-caja") : null;
+		var id = caja ? caja.getAttribute("data-uml-id") : (t.getAttribute ? t.getAttribute("data-uml-rel") : null);
+		var x = id ? quienEditaUml(id) : null;
+		if (!x) { return; }
+		ev.preventDefault();
+		ev.stopPropagation();
+		avisarBloqueo(x, "ese elemento");
 	}
 
 	function frenar(ev) {
@@ -920,9 +972,10 @@ var nube = (function () {
 			metodo: d && d.nube ? d.nube : "",
 			vista: uml.activo() ? "uml" : "ns",
 			bloque: u && !uml.activo() ? u.getAttribute("data-b") : "",
+			uml: uml.activo() ? (uml.elegido() || "") : "",
 			t: Date.now()
 		};
-		var sello = x.metodo + "|" + x.vista + "|" + x.bloque;
+		var sello = x.metodo + "|" + x.vista + "|" + x.bloque + "|" + x.uml;
 		var vence = x.t - presente.t >= LATIDO;
 		if (!forzar && !vence && (sello === presente.firma || !vivos().length)) { return; }
 		presente.firma = sello;
@@ -1082,6 +1135,13 @@ var nube = (function () {
 				c.addEventListener(t, frenar, true);
 			});
 		}
+		var lu = document.getElementById("umlCanvas");
+		if (lu) {
+			["pointerdown", "dblclick"].forEach(function (t) { lu.addEventListener(t, frenarUml, true); });
+			["pointerup", "keyup"].forEach(function (t) {
+				document.addEventListener(t, function () { window.setTimeout(latir, 0); });
+			});
+		}
 		var t = document.getElementById("umlText");
 		if (t) {
 			t.addEventListener("blur", function () {
@@ -1131,6 +1191,7 @@ var nube = (function () {
 	};
 	o.pendiente = pendiente;
 	o.hayBloqueados = hayBloqueados;
+	o.umlBloqueado = umlBloqueado;
 	o.hayPendientes = function () { return solapas.todas().some(pendiente); };
 	o.subirNuevo = subirNuevo;
 	o.guardarEnCuenta = guardarEnCuenta;
