@@ -37,7 +37,10 @@ var uml = (function () {
 	var relaciones = [];
 	var memoria = [];
 	var elegido = null;
+	var grupo = [];
+	var recuadro = null;
 	var tipoNuevo = "aso";
+	var tipoAgregar = "clase";
 	var uniendo = false;
 	var desde = null;
 	var nivelZoom = 1;
@@ -136,6 +139,7 @@ var uml = (function () {
 		relaciones = d.l || [];
 		memoria = d.m || [];
 		if (elegido && !porId(elegido) && !lineaPorId(elegido)) { elegido = null; }
+		grupo = grupo.filter(function (id) { return !!porId(id); });
 		desde = null;
 		uniendo = false;
 		util.marcarCambios();
@@ -275,7 +279,60 @@ var uml = (function () {
 		return { x: (m.scrollLeft + m.clientWidth / 2) / nivelZoom, y: (m.scrollTop + m.clientHeight / 2) / nivelZoom };
 	}
 
+	function enGrupo(id) { return grupo.indexOf(id) !== -1; }
+
+	function seleccionados() { return grupo.length ? grupo.slice() : (elegido ? [elegido] : []); }
+
+	function ponerGrupo(ids) {
+		if (ids.length === 1) {
+			elegido = ids[0];
+			grupo = [];
+		} else {
+			elegido = null;
+			grupo = ids;
+		}
+	}
+
+	function internas(ids) {
+		return relaciones.filter(function (l) { return ids.indexOf(l.de) !== -1 && ids.indexOf(l.a) !== -1; });
+	}
+
+	function deOtro(id) {
+		return typeof nube !== "undefined" && nube.umlDeOtro(id);
+	}
+
+	function elegirTodo() {
+		ponerGrupo(elementos.map(function (c) { return c.id; }).filter(function (id) { return !deOtro(id); }));
+		pintar();
+	}
+
+	function duplicarGrupo() {
+		var nuevos = {};
+		grupo.forEach(function (id) {
+			var c = porId(id);
+			if (!c) { return; }
+			var copia = {
+				id: util.nuevoId("u"), k: c.k, x: c.x + 20, y: c.y + 20,
+				w: c.w, h: c.h, txt: c.txt, col: colorValido(c.col)
+			};
+			nuevos[id] = copia.id;
+			elementos.push(copia);
+		});
+		internas(grupo).forEach(function (l) {
+			relaciones.push({
+				id: util.nuevoId("r"), de: nuevos[l.de], a: nuevos[l.a], t: l.t, txt: l.txt,
+				q: quiebres(l).map(function (q) { return { x: q.x + 20, y: q.y + 20 }; })
+			});
+		});
+		grupo = Object.keys(nuevos).map(function (k) { return nuevos[k]; });
+		util.marcarCambios();
+		pintar();
+		anotarYa();
+		return true;
+	}
+
 	function duplicar() {
+		if (grupo.length) { return duplicarGrupo(); }
 		var c = elegido ? porId(elegido) : null;
 		if (!c) { return false; }
 		var copia = {
@@ -292,6 +349,24 @@ var uml = (function () {
 	}
 
 	function correrElegido(dx, dy) {
+		if (grupo.length) {
+			grupo.forEach(function (id) {
+				var x = porId(id);
+				if (!x) { return; }
+				x.x = Math.max(0, x.x + dx);
+				x.y = Math.max(0, x.y + dy);
+			});
+			internas(grupo).forEach(function (l) {
+				quiebres(l).forEach(function (q) {
+					q.x = Math.max(0, q.x + dx);
+					q.y = Math.max(0, q.y + dy);
+				});
+			});
+			util.marcarCambios();
+			pintar();
+			anotarLuego();
+			return true;
+		}
 		var c = elegido ? porId(elegido) : null;
 		if (!c) { return false; }
 		c.x = Math.max(0, c.x + dx);
@@ -329,6 +404,19 @@ var uml = (function () {
 	}
 
 	function borrarElegido() {
+		if (grupo.length) {
+			var ids = grupo.slice();
+			var unidas = relaciones.filter(function (x) { return ids.indexOf(x.de) !== -1 || ids.indexOf(x.a) !== -1; })
+				.map(function (x) { return x.id; });
+			if (ajeno(unidas)) { return; }
+			elementos = elementos.filter(function (x) { return ids.indexOf(x.id) === -1; });
+			relaciones = relaciones.filter(function (x) { return unidas.indexOf(x.id) === -1; });
+			grupo = [];
+			util.marcarCambios();
+			pintar();
+			anotarYa();
+			return;
+		}
 		if (!elegido) { return; }
 		var pegadas = relaciones.filter(function (x) { return x.de === elegido || x.a === elegido; })
 			.map(function (x) { return x.id; });
@@ -532,14 +620,45 @@ var uml = (function () {
 		if (uniendo) { util.aviso("Tocá la clase de origen y después la de destino"); }
 	}
 
+	function tipoActual() {
+		var l = elegido ? lineaPorId(elegido) : null;
+		return l ? l.t : tipoNuevo;
+	}
+
+	function agregarDelTipo() {
+		var p = centroVista();
+		if (tipoAgregar === "nota") { nueva("nota", p.x - 75, p.y - 35); }
+		else { nueva("clase", p.x - 105, p.y - 60); }
+	}
+
+	function pintarAgregar() {
+		var b = document.getElementById("umlAgregar");
+		if (!b) { return; }
+		var nota = tipoAgregar === "nota";
+		b.innerHTML = '<i class="fa ' + (nota ? "fa-sticky-note-o" : "fa-plus-square-o") + '"></i> <span>' +
+			(nota ? "Nota" : "Clase") + "</span>";
+		b.title = nota ? "Agregar una nota (N)" : "Agregar una clase (C)";
+	}
+
 	function pintarTipos() {
 		var l = elegido ? lineaPorId(elegido) : null;
-		var actual = l ? l.t : tipoNuevo;
-		util.qq("#umlRelTipos .uml-tipo").forEach(function (b) {
-			b.classList.toggle("uml-tipo-on", b.getAttribute("data-uml-t") === actual);
+		var actual = tipoActual();
+		util.qq("#umlRelMenu .uml-rel-item").forEach(function (b) {
+			var si = b.getAttribute("data-uml-t") === actual;
+			b.classList.toggle("nsh-menu-elegido", si);
 		});
-		var zona = document.getElementById("umlRelTipos");
-		if (zona) { zona.classList.toggle("uml-uniendo", uniendo && !l); }
+		var rel = document.getElementById("umlRel");
+		if (rel && rel.getAttribute("data-uml-t") !== actual) {
+			rel.setAttribute("data-uml-t", actual);
+			rel.innerHTML = "";
+			rel.appendChild(iconoVinculo(actual));
+		}
+		if (rel) {
+			rel.classList.toggle("uml-on", uniendo && !l);
+			rel.title = l
+				? "Tipo de esta relación: " + nombreVinculo(actual) + ". Cambialo con la flechita"
+				: nombreVinculo(actual) + " (R)\nTocalo y después elegí la clase de origen y la de destino";
+		}
 		document.body.classList.toggle("nsh-uml-uniendo", vista && uniendo && !l);
 	}
 
@@ -687,7 +806,7 @@ var uml = (function () {
 			var d = document.createElement("div");
 			d.className = "uml-caja" + (c.k === "nota" ? " uml-nota" : "") +
 				claseDeColor(c.col) +
-				(elegido === c.id ? " uml-elegida" : "") +
+				(elegido === c.id || enGrupo(c.id) ? " uml-elegida" : "") +
 				(desde === c.id ? " uml-origen" : "");
 			d.setAttribute("data-uml-id", c.id);
 			d.style.left = c.x + "px";
@@ -710,11 +829,10 @@ var uml = (function () {
 	}
 
 	function ponerColor(id) {
-		var c = elegido ? porId(elegido) : null;
-		if (!c) { return; }
 		var v = colorValido(id);
-		if ((c.col || "") === v) { return; }
-		c.col = v;
+		var cs = seleccionados().map(porId).filter(function (c) { return c && (c.col || "") !== v; });
+		if (!cs.length) { return; }
+		cs.forEach(function (c) { c.col = v; });
 		util.marcarCambios();
 		pintar();
 		anotarYa();
@@ -738,11 +856,12 @@ var uml = (function () {
 	function pintarColores() {
 		var zona = document.getElementById("umlColores");
 		if (!zona) { return; }
-		var c = elegido ? porId(elegido) : null;
-		var actual = c ? colorValido(c.col) : "";
-		zona.classList.toggle("uml-colores-off", !c);
+		var cs = seleccionados().map(porId).filter(Boolean);
+		var actual = cs.length ? colorValido(cs[0].col) : "";
+		var iguales = cs.every(function (c) { return colorValido(c.col) === actual; });
+		zona.classList.toggle("uml-colores-off", !cs.length);
 		util.qq(".uml-color", zona).forEach(function (b) {
-			b.classList.toggle("uml-color-on", !!c && b.getAttribute("data-uml-color") === actual);
+			b.classList.toggle("uml-color-on", !!cs.length && iguales && b.getAttribute("data-uml-color") === actual);
 		});
 	}
 
@@ -754,7 +873,10 @@ var uml = (function () {
 		var c = elegido ? porId(elegido) : null;
 		var l = elegido ? lineaPorId(elegido) : null;
 		t.disabled = !c && !l;
-		if (c) {
+		if (grupo.length) {
+			t.value = "";
+			if (cartel) { cartel.textContent = grupo.length + " elementos seleccionados"; }
+		} else if (c) {
 			if (t.value !== c.txt) { t.value = c.txt; }
 			if (cartel) { cartel.textContent = c.k === "nota" ? "Nota seleccionada" : "Clase seleccionada"; }
 		} else if (l) {
@@ -773,6 +895,67 @@ var uml = (function () {
 	function elegir(id) {
 		if (id && id !== elegido && ajeno([id])) { return; }
 		elegido = id;
+		grupo = [];
+		pintar();
+	}
+
+	function tocarEnGrupo(id) {
+		var ids = seleccionados().filter(function (x) { return !!porId(x); });
+		var i = ids.indexOf(id);
+		if (i === -1) { ids.push(id); } else { ids.splice(i, 1); }
+		ponerGrupo(ids);
+		pintar();
+	}
+
+	function marcarRecuadro(ids) {
+		util.qq(".uml-caja", lienzoUml()).forEach(function (d) {
+			d.classList.toggle("uml-elegida", ids.indexOf(d.getAttribute("data-uml-id")) !== -1);
+		});
+	}
+
+	function arrancarRecuadro(e, sumar) {
+		var p = puntoEnTela(e);
+		recuadro = { x0: p.x, y0: p.y, base: sumar ? seleccionados() : [], div: null };
+		try { lienzoUml().setPointerCapture(e.pointerId); } catch (x) { }
+		window.addEventListener("pointermove", alMoverRecuadro, true);
+		window.addEventListener("pointerup", alSoltarRecuadro, true);
+		window.addEventListener("pointercancel", alSoltarRecuadro, true);
+	}
+
+	function alMoverRecuadro(e) {
+		if (!recuadro) { return; }
+		if (e.pointerType === "mouse" && e.buttons === 0) {
+			alSoltarRecuadro();
+			return;
+		}
+		var p = puntoEnTela(e);
+		if (!recuadro.div) {
+			if (Math.abs(p.x - recuadro.x0) + Math.abs(p.y - recuadro.y0) < 5) { return; }
+			recuadro.div = document.createElement("div");
+			recuadro.div.className = "uml-recuadro";
+			lienzoUml().appendChild(recuadro.div);
+		}
+		e.preventDefault();
+		var x = Math.min(p.x, recuadro.x0), y = Math.min(p.y, recuadro.y0);
+		var w = Math.abs(p.x - recuadro.x0), h = Math.abs(p.y - recuadro.y0);
+		recuadro.div.style.left = x + "px";
+		recuadro.div.style.top = y + "px";
+		recuadro.div.style.width = w + "px";
+		recuadro.div.style.height = h + "px";
+		var dentro = elementos.filter(function (c) {
+			return c.x < x + w && c.x + c.w > x && c.y < y + h && c.y + c.h > y && !deOtro(c.id);
+		}).map(function (c) { return c.id; });
+		var ids = recuadro.base.concat(dentro.filter(function (id) { return recuadro.base.indexOf(id) === -1; }));
+		ponerGrupo(ids);
+		marcarRecuadro(ids);
+	}
+
+	function alSoltarRecuadro() {
+		window.removeEventListener("pointermove", alMoverRecuadro, true);
+		window.removeEventListener("pointerup", alSoltarRecuadro, true);
+		window.removeEventListener("pointercancel", alSoltarRecuadro, true);
+		if (recuadro && recuadro.div) { recuadro.div.remove(); }
+		recuadro = null;
 		pintar();
 	}
 
@@ -824,16 +1007,29 @@ var uml = (function () {
 		}
 
 		var caja = e.target.closest ? e.target.closest(".uml-caja") : null;
+		var sumar = e.ctrlKey || e.metaKey || e.shiftKey;
 		if (!caja) {
 			if (e.target === casa || e.target === svg()) {
 				desde = null;
+				var cancelaUnion = uniendo;
 				uniendo = false;
-				elegir(null);
+				if (cancelaUnion || !sumar) { elegir(null); }
+				if (!cancelaUnion && e.button === 0 && e.pointerType !== "touch") {
+					e.preventDefault();
+					arrancarRecuadro(e, sumar);
+				}
 			}
 			return;
 		}
 		var c = porId(caja.getAttribute("data-uml-id"));
 		if (!c) { return; }
+
+		if (sumar && !uniendo && e.button === 0) {
+			e.preventDefault();
+			ultimoToque = { id: null, t: 0 };
+			tocarEnGrupo(c.id);
+			return;
+		}
 
 		if (uniendo) {
 			if (!desde) { desde = c.id; pintar(); return; }
@@ -855,6 +1051,7 @@ var uml = (function () {
 		if (doble) {
 			e.preventDefault();
 			ultimoToque = { id: null, t: 0 };
+			grupo = [];
 			elegido = c.id;
 			if (duplicar()) {
 				util.aviso(c.k === "nota" ? "Se duplicó la nota" : "Se duplicó la clase");
@@ -862,14 +1059,29 @@ var uml = (function () {
 			return;
 		}
 
-		elegir(c.id);
 		var p = puntoEnTela(e);
-		arrastreActual = {
-			c: c,
-			modo: e.target.classList.contains("uml-tirador") ? "redimensionar" : "mover",
-			x0: p.x, y0: p.y,
-			ax: c.x, ay: c.y, aw: c.w, ah: c.h
-		};
+		var tirador = e.target.classList.contains("uml-tirador");
+		if (enGrupo(c.id) && !tirador) {
+			arrastreActual = {
+				modo: "grupo",
+				x0: p.x, y0: p.y,
+				cosas: grupo.map(porId).filter(Boolean).map(function (x) { return { id: x.id, ax: x.x, ay: x.y }; }),
+				puntos: []
+			};
+			internas(grupo).forEach(function (l) {
+				quiebres(l).forEach(function (q, i) {
+					arrastreActual.puntos.push({ l: l.id, i: i, ax: q.x, ay: q.y });
+				});
+			});
+		} else {
+			elegir(c.id);
+			arrastreActual = {
+				c: c,
+				modo: tirador ? "redimensionar" : "mover",
+				x0: p.x, y0: p.y,
+				ax: c.x, ay: c.y, aw: c.w, ah: c.h
+			};
+		}
 		e.preventDefault();
 		window.addEventListener("pointermove", alMover, true);
 		window.addEventListener("pointerup", alSoltar, true);
@@ -887,6 +1099,33 @@ var uml = (function () {
 				q.x = aGrilla(arrastreActual.ax + dx);
 				q.y = aGrilla(arrastreActual.ay + dy);
 			}
+			dibujarLineas();
+			e.preventDefault();
+			return;
+		}
+		if (arrastreActual.modo === "grupo") {
+			var gx = Math.round(dx / GRILLA) * GRILLA, gy = Math.round(dy / GRILLA) * GRILLA;
+			arrastreActual.cosas.concat(arrastreActual.puntos).forEach(function (o) {
+				gx = Math.max(gx, -o.ax);
+				gy = Math.max(gy, -o.ay);
+			});
+			arrastreActual.cosas.forEach(function (o) {
+				var x = porId(o.id);
+				if (!x) { return; }
+				x.x = o.ax + gx;
+				x.y = o.ay + gy;
+				var dv = lienzoUml().querySelector('.uml-caja[data-uml-id="' + x.id + '"]');
+				if (dv) {
+					dv.style.left = x.x + "px";
+					dv.style.top = x.y + "px";
+				}
+			});
+			arrastreActual.puntos.forEach(function (o) {
+				var q = quiebres(lineaPorId(o.l))[o.i];
+				if (!q) { return; }
+				q.x = o.ax + gx;
+				q.y = o.ay + gy;
+			});
 			dibujarLineas();
 			e.preventDefault();
 			return;
@@ -1131,6 +1370,7 @@ var uml = (function () {
 
 		elementos = elementos.filter(function (c) { return c.k === "nota"; });
 		relaciones = [];
+		grupo = [];
 		memoria = [];
 		var col = 0, fila = 0;
 		carpetas.forEach(function (f) {
@@ -1365,6 +1605,7 @@ var uml = (function () {
 		relaciones = d.lineas;
 		memoria = [];
 		elegido = null;
+		grupo = [];
 		desde = null;
 		uniendo = false;
 		mostrar(true);
@@ -1385,19 +1626,47 @@ var uml = (function () {
 		casa.style.width = ANCHO + "px";
 		casa.style.height = ALTO + "px";
 
-		var zona = document.getElementById("umlRelTipos");
-		if (zona) {
+		var menuRel = document.getElementById("umlRelMenu");
+		if (menuRel) {
 			VINCULOS.forEach(function (v, i) {
 				var b = document.createElement("button");
 				b.type = "button";
-				b.className = "uml-tipo";
-				b.title = v.nombre + " (" + (i + 1) + ")\nTocala y después elegí la clase de origen y la de destino";
+				b.className = "nsh-menu-item uml-rel-item";
 				b.setAttribute("data-uml-t", v.id);
 				b.appendChild(iconoVinculo(v.id));
+				var txt = document.createElement("span");
+				txt.textContent = v.nombre;
+				b.appendChild(txt);
+				var tecla = document.createElement("span");
+				tecla.className = "nsh-menu-key";
+				tecla.textContent = String(i + 1);
+				b.appendChild(tecla);
 				b.addEventListener("click", function () { elegirTipo(v.id); });
-				zona.appendChild(b);
+				menuRel.appendChild(b);
 			});
+			desplegable.armar(document.getElementById("umlRelMas"), menuRel,
+				{ hover: false, ancla: document.getElementById("umlRelTipos") });
 		}
+		var rel = document.getElementById("umlRel");
+		if (rel) { rel.addEventListener("click", function () { elegirTipo(tipoActual()); }); }
+
+		var menuNuevo = document.getElementById("umlAgregarMenu");
+		if (menuNuevo) {
+			menuNuevo.addEventListener("click", function (e) {
+				var b = e.target.closest("[data-uml-nuevo]");
+				if (!b) { return; }
+				tipoAgregar = b.getAttribute("data-uml-nuevo");
+				pintarAgregar();
+				agregarDelTipo();
+			});
+			desplegable.armar(document.getElementById("umlAgregarMas"), menuNuevo,
+				{ hover: false, ancla: document.getElementById("umlAgregarGrupo") });
+		}
+		var agregar = document.getElementById("umlAgregar");
+		if (agregar) { agregar.addEventListener("click", agregarDelTipo); }
+
+		desplegable.armar(document.getElementById("umlTranscribir"),
+			document.getElementById("umlTranscribirMenu"), { hover: false });
 
 		armarColores();
 
@@ -1436,8 +1705,6 @@ var uml = (function () {
 		});
 
 		var botones = {
-			"umlNuevaClase": function () { var p = centroVista(); nueva("clase", p.x - 105, p.y - 60); },
-			"umlNuevaNota": function () { var p = centroVista(); nueva("nota", p.x - 75, p.y - 35); },
 			"umlBorrar": borrarElegido,
 			"umlSync": sincronizar,
 			"umlLeer": traerDelNs,
@@ -1502,6 +1769,7 @@ var uml = (function () {
 			if (k === "z" && !e.shiftKey) { e.preventDefault(); deshacer(); return; }
 			if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); rehacer(); return; }
 			if (k === "d") { e.preventDefault(); duplicar(); return; }
+			if (k === "a") { e.preventDefault(); elegirTodo(); return; }
 			if (k === "g") { e.preventDefault(); sincronizar(); return; }
 			if (k === "0") { e.preventDefault(); zoomCentro(1); return; }
 			if (k === "9") { e.preventDefault(); ajustar(); return; }
@@ -1572,6 +1840,7 @@ var uml = (function () {
 	o.cargar = function (d) {
 		leerDibujo(d);
 		elegido = null;
+		grupo = [];
 		desde = null;
 		uniendo = false;
 		if (vista) { pintar(); }
@@ -1581,6 +1850,7 @@ var uml = (function () {
 	o.recibir = function (d) {
 		leerDibujo(d);
 		if (elegido && !porId(elegido) && !lineaPorId(elegido)) { elegido = null; }
+		grupo = grupo.filter(function (id) { return !!porId(id); });
 		if (desde && !porId(desde)) { desde = null; uniendo = false; }
 		if (arrastreActual && arrastreActual.c) {
 			arrastreActual.c = porId(arrastreActual.c.id) || arrastreActual.c;
@@ -1592,7 +1862,7 @@ var uml = (function () {
 		olvidarHistoria();
 	};
 
-	o.elegido = function () { return elegido; };
+	o.seleccion = seleccionados;
 	o.uniendo = function () { return uniendo; };
 
 	return o;

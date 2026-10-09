@@ -828,8 +828,12 @@ var nube = (function () {
 		return !!x && x.vista === "uml" && !!x.uml && esActiva(presente.e);
 	}
 
+	function idsUml(x) {
+		return String(x.uml || "").split(",").filter(Boolean);
+	}
+
 	function quienEditaUml(id) {
-		var uid = vivos().filter(function (x) { return editandoUml(x) && gente[x].uml === id; })[0];
+		var uid = vivos().filter(function (x) { return editandoUml(x) && idsUml(gente[x]).indexOf(id) !== -1; })[0];
 		return uid ? gente[uid] : null;
 	}
 
@@ -877,11 +881,13 @@ var nube = (function () {
 				reglas.push(sel + " [data-b] .input-for-statement{cursor:auto}");
 			}
 			if (editandoUml(uid)) {
-				var id = String(x.uml).replace(/["\\]/g, "");
-				var caja = '#umlCanvas .uml-caja[data-uml-id="' + id + '"]';
-				reglas.push(caja + "{outline:3px solid " + color + ";outline-offset:3px;overflow:visible;cursor:not-allowed}");
-				reglas.push(etiqueta(caja, color, nombre));
-				reglas.push('#umlSvg .uml-golpe[data-uml-rel="' + id + '"]{stroke:' + color + ";stroke-opacity:.45;cursor:not-allowed}");
+				idsUml(x).forEach(function (bruto) {
+					var id = bruto.replace(/["\\]/g, "");
+					var caja = '#umlCanvas .uml-caja[data-uml-id="' + id + '"]';
+					reglas.push(caja + "{outline:3px solid " + color + ";outline-offset:3px;overflow:visible;cursor:not-allowed}");
+					reglas.push(etiqueta(caja, color, nombre));
+					reglas.push('#umlSvg .uml-golpe[data-uml-rel="' + id + '"]{stroke:' + color + ";stroke-opacity:.45;cursor:not-allowed}");
+				});
 			}
 		});
 		var txt = reglas.join("\n");
@@ -972,7 +978,7 @@ var nube = (function () {
 			metodo: d && d.nube ? d.nube : "",
 			vista: uml.activo() ? "uml" : "ns",
 			bloque: u && !uml.activo() ? u.getAttribute("data-b") : "",
-			uml: uml.activo() ? (uml.elegido() || "") : "",
+			uml: uml.activo() ? uml.seleccion().join(",") : "",
 			t: Date.now()
 		};
 		var sello = x.metodo + "|" + x.vista + "|" + x.bloque + "|" + x.uml;
@@ -1192,6 +1198,7 @@ var nube = (function () {
 	o.pendiente = pendiente;
 	o.hayBloqueados = hayBloqueados;
 	o.umlBloqueado = umlBloqueado;
+	o.umlDeOtro = function (id) { return !!quienEditaUml(id); };
 	o.hayPendientes = function () { return solapas.todas().some(pendiente); };
 	o.subirNuevo = subirNuevo;
 	o.guardarEnCuenta = guardarEnCuenta;

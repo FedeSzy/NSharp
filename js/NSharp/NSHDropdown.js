@@ -51,7 +51,7 @@ var desplegable = (function () {
 		boton.setAttribute("aria-expanded", "false");
 
 		function ubicar() {
-			var r = boton.getBoundingClientRect();
+			var r = (cfg.ancla || boton).getBoundingClientRect();
 			var ancho = caja.offsetWidth || 200;
 			var alto = caja.offsetHeight || 0;
 			var x = cfg.derecha ? (r.right - ancho) : r.left;

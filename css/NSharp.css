@@ -2072,7 +2072,6 @@ body.nsh-solo-lectura #newFolder,
 body.nsh-solo-lectura .nsh-row-actions,
 body.nsh-solo-lectura .nsh-row-check,
 body.nsh-solo-lectura #umlBar .uml-btn:not(#umlGuardarUxf),
-body.nsh-solo-lectura #umlBar .uml-tipos,
 body.nsh-solo-lectura .uml-colores-fila {
 	display: none !important;
 }
