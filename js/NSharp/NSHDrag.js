@@ -238,6 +238,7 @@ var arrastre = (function () {
 		if (!d) { return false; }
 		if (d.tacho) {
 			if (v.modo === "copia") { return false; }
+			if (typeof nube !== "undefined" && nube.hayBloqueados(v.llevados)) { return false; }
 			v.llevados.forEach(seleccion.quitarBloque);
 			seleccion.limpiarSeleccion();
 			seleccion.refrescarLienzo();

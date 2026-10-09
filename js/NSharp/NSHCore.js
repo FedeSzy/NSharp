@@ -74,6 +74,28 @@ var util = (function () {
 		return n;
 	}
 
+	function marcarBloques(r) {
+		var z = r || zonaDiagrama();
+		if (!z) { return; }
+		var cab = q(".method-declaration", z);
+		if (cab) { cab.setAttribute("data-b", "cabecera"); }
+		var vistos = { cabecera: true };
+		qq('[draggable="true"]', z).forEach(function (b) {
+			var id = b.getAttribute("data-b");
+			if (!id || vistos[id]) {
+				id = nuevoId("b");
+				b.setAttribute("data-b", id);
+			}
+			vistos[id] = true;
+		});
+	}
+
+	function unidadDe(el) {
+		var z = zonaDiagrama();
+		var u = el && el.closest ? el.closest("[data-b]") : null;
+		return (u && z && z.contains(u)) ? u : null;
+	}
+
 	function bloqueDe(el) {
 		var n = el, raiz = zonaDiagrama();
 		while (n && n !== raiz) {
@@ -245,6 +267,8 @@ var util = (function () {
 	o.zonaDeclaracion = zonaDeclaracion;
 	o.acomodarDeclaraciones = acomodarDeclaraciones;
 	o.bloqueDe = bloqueDe;
+	o.marcarBloques = marcarBloques;
+	o.unidadDe = unidadDe;
 	o.volcarCampos = volcarCampos;
 	o.htmlLimpio = htmlLimpio;
 	o.aNodos = aNodos;
