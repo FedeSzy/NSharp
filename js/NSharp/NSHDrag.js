@@ -155,6 +155,15 @@ var arrastre = (function () {
 		return p;
 	}
 
+	function escribirEn(p) {
+		seleccion.limpiarSeleccion();
+		var i = p.querySelector(".input-for-statement");
+		if (i) {
+			i.focus();
+			i.select();
+		}
+	}
+
 	function insertarPlantilla(json, hh) {
 		if (!util.hayMetodo()) {
 			util.aviso("Abrí un método antes de agregar bloques");
@@ -165,10 +174,8 @@ var arrastre = (function () {
 		var p = desdePlantilla(json);
 		seleccion.meterEn(destino, p);
 		seleccion.refrescarLienzo();
-		seleccion.soloEste(p);
 		p.scrollIntoView({ block: "nearest", behavior: "smooth" });
-		var i = p.querySelector(".input-for-statement");
-		if (i) { i.focus(); i.select(); }
+		escribirEn(p);
 		return true;
 	}
 
@@ -263,7 +270,7 @@ var arrastre = (function () {
 			var p = desdePlantilla(v.plantilla);
 			seleccion.meterEn(d.hueco, p);
 			seleccion.refrescarLienzo();
-			seleccion.soloEste(p);
+			escribirEn(p);
 			return true;
 		}
 
