@@ -9,6 +9,14 @@ var cuenta = (function () {
 	var oyentes = [];
 	var mando = null;
 
+	var DOMINIOS = ["ort.edu.ar", "est.ort.edu.ar"];
+	var AVISO_DOMINIO = "Solo se puede iniciar sesión con una cuenta de ORT\n(@ort.edu.ar o @est.ort.edu.ar).";
+
+	function permitido(email) {
+		var d = String(email || "").toLowerCase().split("@")[1] || "";
+		return DOMINIOS.indexOf(d) !== -1;
+	}
+
 	function configurada() {
 		return typeof firebase !== "undefined" && typeof NUBE_CONFIG !== "undefined" && !!NUBE_CONFIG.apiKey;
 	}
@@ -47,7 +55,7 @@ var cuenta = (function () {
 		if (!b || !m) { return; }
 		if (!yo) {
 			b.innerHTML = '<i class="fa fa-google"></i> <span>Iniciar sesión</span>';
-			b.title = "Iniciar sesión con Google para guardar tus proyectos en tu cuenta";
+			b.title = "Iniciar sesión con tu cuenta de ORT para guardar tus proyectos";
 			b.classList.remove("nsh-pildora-cuenta");
 			m.innerHTML = "";
 			if (mando) { mando.cerrar(); }
@@ -73,10 +81,18 @@ var cuenta = (function () {
 		var prov = new firebase.auth.GoogleAuthProvider();
 		prov.setCustomParameters({ prompt: "select_account" });
 		return app.auth().signInWithPopup(prov).then(function (r) {
+			if (!permitido(r.user.email)) {
+				app.auth().signOut();
+				throw { code: "nsh/dominio" };
+			}
 			util.aviso("Hola, " + (r.user.displayName || r.user.email || "").split(" ")[0]);
 			return r.user;
 		}).catch(function (e) {
 			var codigo = e && e.code ? e.code : "";
+			if (codigo === "nsh/dominio") {
+				alert(AVISO_DOMINIO);
+				throw e;
+			}
 			if (codigo !== "auth/popup-closed-by-user" && codigo !== "auth/cancelled-popup-request") {
 				alert("No se pudo iniciar sesión.\n\nDetalle: " + (e && e.message ? e.message : e));
 			}
@@ -258,6 +274,10 @@ var cuenta = (function () {
 			return;
 		}
 		app.auth().onAuthStateChanged(function (u) {
+			if (u && !permitido(u.email)) {
+				app.auth().signOut();
+				return;
+			}
 			yo = u;
 			pintarBoton();
 			var primera = !listo;
@@ -269,6 +289,7 @@ var cuenta = (function () {
 
 	o.usuario = function () { return yo; };
 	o.correo = correo;
+	o.permitido = permitido;
 	o.nombre = nombre;
 	o.avatar = avatar;
 	o.base = function () { return base; };
