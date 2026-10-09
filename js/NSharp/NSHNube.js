@@ -1,7 +1,6 @@
 var nube = (function () {
 	var o = {};
 
-	var ESPERA = 1200;
 	var RAPIDO = 1000;
 	var SOLO = 4000;
 	var CADA_EDITADO = 60000;
@@ -552,23 +551,10 @@ var nube = (function () {
 		solapas.pintar();
 	}
 
-	function programarNuevo(e) {
-		if (!e || e.nube || !yo()) { return; }
-		if (e.relojNuevo) { window.clearTimeout(e.relojNuevo); }
-		e.relojNuevo = window.setTimeout(function () {
-			e.relojNuevo = null;
-			subirNuevo(e);
-		}, ESPERA);
-	}
-
 	function subirNuevo(e) {
 		if (!e || !yo() || !db()) { return Promise.resolve(null); }
 		if (e.nube) { return Promise.resolve(e.nube.id); }
 		if (e.creando) { return e.creando; }
-		if (e.relojNuevo) {
-			window.clearTimeout(e.relojNuevo);
-			e.relojNuevo = null;
-		}
 		var u = yo();
 		var id = db().collection("proyectos").doc().id;
 		var local = fotoLocal(e);
@@ -599,7 +585,7 @@ var nube = (function () {
 			seguir(e);
 			if (esActiva(e)) { alMostrar(e); }
 			subir(e);
-			util.aviso("El proyecto se guarda solo en tu cuenta");
+			util.aviso("Se guardó en tu cuenta. Desde ahora se guarda solo", 3200);
 			return id;
 		}).catch(function (err) {
 			e.creando = null;
@@ -981,7 +967,7 @@ var nube = (function () {
 
 	function pendiente(e) {
 		if (!e) { return false; }
-		if (e.relojNuevo || e.creando) { return true; }
+		if (e.creando) { return true; }
 		var n = e.nube;
 		return !!n && (!!n.reloj || n.subiendo > 0 || !!n.error);
 	}
@@ -1002,17 +988,34 @@ var nube = (function () {
 			}
 			else { html = '<i class="fa fa-cloud"></i> Guardado en la cuenta'; }
 		} else if (e) {
-			html = yo()
-				? '<i class="fa fa-laptop"></i> Proyecto local: se guarda en la cuenta al editarlo'
-				: '<i class="fa fa-laptop"></i> Proyecto local';
+			html = '<i class="fa fa-laptop"></i> Proyecto local' + (cuenta.configurada()
+				? ' · <button type="button" data-nsh-guardar="1"><i class="fa fa-cloud-upload"></i> Guardar en la cuenta</button>'
+				: "");
 		}
-		caja.innerHTML = html;
+		if (caja.innerHTML !== html) { caja.innerHTML = html; }
+	}
+
+	function guardarEnCuenta() {
+		var e = solapas.actual();
+		if (!e) { return; }
+		if (e.nube) {
+			util.aviso("Este proyecto ya se guarda en tu cuenta");
+			return;
+		}
+		if (!cuenta.configurada()) {
+			util.aviso("El inicio de sesión todavía no está configurado", 3200);
+			return;
+		}
+		cuenta.conSesion(function () {
+			if (e !== solapas.actual() || e.nube) { return; }
+			if (!tieneNombre() && !pedirNombre()) { return; }
+			subirNuevo(e);
+		});
 	}
 
 	function alCambio() {
 		var e = solapas.actual();
-		if (!e) { return; }
-		if (e.nube) { programar(e); } else { programarNuevo(e); }
+		if (e && e.nube) { programar(e); }
 	}
 
 	function alMostrar(e) {
@@ -1024,17 +1027,12 @@ var nube = (function () {
 
 	function alDejar(e) {
 		if (!e) { return; }
-		if (e.relojNuevo) { subirNuevo(e); }
 		if (e.nube && e.nube.reloj) { subir(e); }
 		if (presente.e === e) { salirPresencia(); }
 	}
 
 	function soltar(e) {
 		if (!e) { return; }
-		if (e.relojNuevo) {
-			window.clearTimeout(e.relojNuevo);
-			e.relojNuevo = null;
-		}
 		if (presente.e === e) { salirPresencia(); }
 		soltarEscuchas(e);
 	}
@@ -1052,9 +1050,6 @@ var nube = (function () {
 			estado();
 			return;
 		}
-		solapas.todas().forEach(function (e) {
-			if (!e.nube && (e === solapas.actual() ? util.hayCambios() : e.sucio)) { subirNuevo(e); }
-		});
 		var act = solapas.actual();
 		if (act && act.nube) {
 			presente.e = null;
@@ -1099,6 +1094,14 @@ var nube = (function () {
 				if (e && e.nube && e.nube.atrasado) { conciliar(e); }
 			}, 50);
 		});
+		var pie = document.getElementById("nshNubeEstado");
+		if (pie) {
+			pie.addEventListener("click", function (ev) {
+				if (ev.target.closest("[data-nsh-guardar]")) { guardarEnCuenta(); }
+			});
+		}
+		var b = document.getElementById("nshGuardarCuentaBtn");
+		if (b) { b.addEventListener("click", guardarEnCuenta); }
 		window.addEventListener("online", estado);
 		window.addEventListener("offline", estado);
 		document.addEventListener("visibilitychange", function () {
@@ -1130,6 +1133,7 @@ var nube = (function () {
 	o.hayBloqueados = hayBloqueados;
 	o.hayPendientes = function () { return solapas.todas().some(pendiente); };
 	o.subirNuevo = subirNuevo;
+	o.guardarEnCuenta = guardarEnCuenta;
 	o.abrir = abrir;
 	o.borrar = borrar;
 	o.cambiarAcceso = cambiarAcceso;

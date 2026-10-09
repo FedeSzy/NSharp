@@ -107,7 +107,6 @@ function leerArchivo(f) {
 				dibujo: abierto.extra ? abierto.extra.uml : null
 			});
 			util.aviso('Se abrió "' + elArchivo.name + '"');
-			if (typeof nube !== "undefined") { nube.subirNuevo(solapas.actual()); }
 		};
 	})(f);
 	lector.readAsText(f);

@@ -1430,6 +1430,26 @@ body.nsh-panning * {
 	opacity: .8;
 }
 
+#nshNubeEstado {
+	opacity: 1;
+}
+
+#nshNubeEstado button {
+	border: 1px solid color-mix(in srgb, var(--nsh-bar-text) 40%, transparent);
+	background: transparent;
+	color: var(--nsh-bar-text);
+	font: inherit;
+	font-size: 11.5px;
+	padding: 1px 9px;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background-color .15s ease;
+}
+
+#nshNubeEstado button:hover {
+	background: color-mix(in srgb, var(--nsh-bar-text) 18%, transparent);
+}
+
 #nshCredits {
 	position: fixed;
 	inset: 0;

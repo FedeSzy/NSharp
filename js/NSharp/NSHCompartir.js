@@ -201,6 +201,8 @@ var compartir = (function () {
 				mostrar(e);
 				return;
 			}
+			if (!confirm("Para compartir el proyecto hay que guardarlo en tu cuenta.\nDesde ese momento se guarda solo. ¿Guardarlo?")) { return; }
+			if (!tieneNombre() && !pedirNombre()) { return; }
 			nube.subirNuevo(e).then(function (id) { if (id) { mostrar(e); } });
 		});
 	}

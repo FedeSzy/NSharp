@@ -208,7 +208,7 @@ var solapas = (function () {
 		});
 		tab.addEventListener("contextmenu", function (ev) {
 			ev.preventDefault();
-			menu.abrir(ev.clientX, ev.clientY, [
+			var items = [
 				{ title: nombre(e) },
 				{
 					label: "Renombrar proyecto", icon: "pencil", action: function () {
@@ -226,7 +226,16 @@ var solapas = (function () {
 				{ separator: true },
 				{ label: "Cerrar las demás", icon: "clone", action: function () { cerrarOtras(e); } },
 				{ label: "Cerrar", icon: "times", danger: true, action: function () { cerrar(e); } }
-			]);
+			];
+			if (!e.nube && hayNube()) {
+				items.splice(2, 0, {
+					label: "Guardar en la cuenta", icon: "cloud-upload", action: function () {
+						ir(e);
+						nube.guardarEnCuenta();
+					}
+				});
+			}
+			menu.abrir(ev.clientX, ev.clientY, items);
 		});
 		return tab;
 	}
