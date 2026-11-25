@@ -79,6 +79,7 @@ var arranque = (function () {
 		configuracion.iniciar();
 		archivos.iniciar();
 		uml.iniciar();
+		lados.iniciar();
 		cuenta.iniciar();
 		nube.iniciar();
 		compartir.iniciar();

@@ -106,7 +106,10 @@ function leerArchivo(f) {
 				carpetas: abierto.extra,
 				dibujo: abierto.extra ? abierto.extra.uml : null
 			});
-			util.aviso('Se abrió "' + elArchivo.name + '"');
+			var orden = arbol.ordenarEnCarpetas(true);
+			util.aviso('Se abrió "' + elArchivo.name + '"' + (orden && orden.creadas
+				? (orden.creadas === 1 ? " y se creó 1 carpeta por clase" : " y se crearon " + orden.creadas + " carpetas por clase")
+				: ""));
 		};
 	})(f);
 	lector.readAsText(f);

@@ -90,6 +90,31 @@ var clases = (function () {
 
 	function olvidar(metId) { delete donde[metId]; }
 
+	function porNombre(nombre) {
+		for (var i = 0; i < lista.length; i++) {
+			if ((lista[i].name || "").trim() === nombre) { return lista[i]; }
+		}
+		return null;
+	}
+
+	function agruparPorClase(mets) {
+		var r = { creadas: 0, movidos: 0, sinClase: 0 };
+		mets.forEach(function (d) {
+			var n = (d.theClass || "").trim();
+			if (!n) { r.sinClase++; return; }
+			var ahora = porId(claseDeMetodo(d.id));
+			if (ahora && (ahora.name || "").trim() === n) { return; }
+			var c = porNombre(n);
+			if (!c) {
+				c = nueva(n, null);
+				r.creadas++;
+			}
+			donde[d.id] = c.id;
+			r.movidos++;
+		});
+		return r;
+	}
+
 	function paraGuardar(mets) {
 		if (!lista.length) { return null; }
 		return {
@@ -134,6 +159,8 @@ var clases = (function () {
 	o.claseDeMetodo = claseDeMetodo;
 	o.asignarA = asignarA;
 	o.olvidar = olvidar;
+	o.porNombre = porNombre;
+	o.agruparPorClase = agruparPorClase;
 	o.paraGuardar = paraGuardar;
 	o.desdeArchivo = desdeArchivo;
 

@@ -33,7 +33,8 @@
 }
 
 body.nsh-uml-on #menuContainer,
-body.nsh-uml-on #buttonOpenBlocks {
+body.nsh-uml-on #buttonOpenBlocks,
+body.nsh-uml-on #diagramMenuWrap {
 	display: none !important;
 }
 
@@ -331,8 +332,19 @@ body.nsh-uml-pan #umlScroll * {
 	background: linear-gradient(135deg, transparent 48%, var(--uml-borde, var(--nsh-line)) 48%, var(--uml-borde, var(--nsh-line)) 62%, transparent 62%);
 }
 
+#umlPropsTirador {
+	position: relative;
+	flex: 0 0 7px;
+	margin-right: -7px;
+}
+
+#umlWrap.uml-sin-elegir #umlProps,
+#umlWrap.uml-sin-elegir #umlPropsTirador {
+	display: none;
+}
+
 #umlProps {
-	flex: 0 0 300px;
+	flex: 0 0 var(--uml-ancho-der, 300px);
 	display: flex;
 	flex-direction: column;
 	border-left: 1px solid var(--nsh-border);
@@ -464,7 +476,7 @@ body.nsh-uml-pan #umlScroll * {
 
 @media (max-width: 900px) {
 	#umlProps {
-		flex-basis: 220px;
+		flex-basis: var(--uml-ancho-der, 220px);
 	}
 }
 
@@ -474,6 +486,11 @@ body.nsh-uml-pan #umlScroll * {
 }
 
 @media (pointer: coarse) {
+	#umlPropsTirador {
+		flex-basis: 14px;
+		margin-right: -14px;
+	}
+
 	.uml-btn {
 		padding: 10px 14px;
 		font-size: 13.5px;
@@ -535,6 +552,10 @@ body.nsh-uml-pan #umlScroll * {
 
 	#umlWrap {
 		flex-direction: column;
+	}
+
+	#umlPropsTirador {
+		display: none;
 	}
 
 	#umlProps {

@@ -126,7 +126,7 @@
 			<div id="nshFindResults" class="invisible"></div>
 		</div>
 
-		<div class="w3-bar-item nsh-menuwrap">
+		<div id="diagramMenuWrap" class="w3-bar-item nsh-menuwrap">
 			<button type="button" id="diagramMenuBtn"
 				class="w3-btn w3-light-grey w3-hover-white w3-text-dark-gray w3-large"
 				title="Agregar parámetros y variables">
@@ -201,6 +201,10 @@
 					<button id="newFolder" class="w3-btn w3-white w3-large w3-text-indigo" title="Nueva clase">
 						<i class="fa fa-lg fa-folder-o"></i>
 					</button>
+					<button id="sortFolders" class="w3-btn w3-white w3-large w3-text-indigo"
+						title="Ordenar los métodos en carpetas según su clase">
+						<i class="fa fa-lg fa-sitemap"></i>
+					</button>
 					<button id="viewAllDiagrams" class="hidden w3-btn w3-white w3-large w3-text-dark-gray">
 						<i class="fa fa-lg fa-eye"></i></button>
 					<button id="buttonCloseDiagrams" class="w3-btn w3-white w3-large w3-text-red"
@@ -210,6 +214,7 @@
 				</div>
 			</div>
 			<div id="diagramsItemsContainer"></div>
+			<div id="nshTiradorIzq" class="nsh-lado-tirador" title="Arrastrá para cambiar el ancho (doble clic: ancho original)"></div>
 		</div>
 
 		<div id="menuContainer" class="w3-sidebar w3-animate-right invisible">
@@ -221,6 +226,7 @@
 				</div>
 			</div>
 			<div id="nshMenuScroll"></div>
+			<div id="nshTiradorDer" class="nsh-lado-tirador" title="Arrastrá para cambiar el ancho (doble clic: ancho original)"></div>
 		</div>
 
 		<section id="sectionDiagram" class="w3-animate-zoom initial-margin-left initial-margin-right">
@@ -284,7 +290,7 @@
 					<i class="fa fa-floppy-o"></i> Guardar .uxf
 				</button>
 			</div>
-			<div id="umlWrap">
+			<div id="umlWrap" class="uml-sin-elegir">
 				<div id="umlLienzo">
 					<div id="umlScroll">
 						<div id="umlCanvas">
@@ -302,6 +308,7 @@
 								class="fa fa-arrows-alt"></i></button>
 					</div>
 				</div>
+				<div id="umlPropsTirador" class="nsh-lado-tirador" title="Arrastrá para cambiar el ancho (doble clic: ancho original)"></div>
 				<aside id="umlProps">
 					<div class="uml-props-head"><i class="fa fa-pencil"></i> <span id="umlQue">Nada elegido</span></div>
 					<div class="uml-colores-fila">
@@ -398,6 +405,7 @@
 	<script type="application/javascript" src="js/NSharp/NSHFileDrop.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHUxf.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHUml.js"></script>
+	<script type="application/javascript" src="js/NSharp/NSHLados.js"></script>
 	<script type="application/javascript" src="js/NSharp/NSHBoot.js"></script>
 
 	<script type="application/javascript" src="js/XNS-editor/templates.js"></script>

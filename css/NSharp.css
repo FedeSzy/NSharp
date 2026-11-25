@@ -412,7 +412,7 @@
 }
 
 #diagramsContainer {
-	width: 250px;
+	width: var(--nsh-ancho-izq, 250px);
 	background: var(--nsh-surface);
 	border-right: 1px solid var(--nsh-border);
 	display: flex;
@@ -423,6 +423,18 @@
 	padding: 8px !important;
 	border-bottom: 1px solid var(--nsh-border);
 	flex: 0 0 auto;
+}
+
+#diagramsContainer .controlButtons .w3-bar {
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: center;
+	gap: 2px;
+}
+
+#diagramsContainer .controlButtons .w3-btn {
+	padding-left: 12px;
+	padding-right: 12px;
 }
 
 #diagramsItemsContainer {
@@ -658,7 +670,7 @@
 }
 
 #menuContainer {
-	width: 290px;
+	width: var(--nsh-ancho-der, 290px);
 	background: var(--nsh-surface);
 	border-left: 1px solid var(--nsh-border);
 	display: flex;
@@ -1563,11 +1575,11 @@ body.nsh-panning * {
 }
 
 .margin-left {
-	margin-left: 250px;
+	margin-left: var(--nsh-ancho-izq, 250px);
 }
 
 .margin-right {
-	margin-right: 290px;
+	margin-right: var(--nsh-ancho-der, 290px);
 }
 
 .initial-margin-left {
@@ -1587,6 +1599,67 @@ body.nsh-panning * {
 #diagramsContainer,
 #menuContainer {
 	overflow: hidden;
+}
+
+.nsh-lado-tirador {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 7px;
+	z-index: 5;
+	cursor: col-resize;
+	touch-action: none;
+	background: transparent;
+	transition: background-color .15s ease;
+}
+
+#nshTiradorIzq {
+	right: 0;
+}
+
+#nshTiradorDer {
+	left: 0;
+}
+
+.nsh-lado-tirador::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 3px;
+	height: 34px;
+	margin: -17px 0 0 -1.5px;
+	border-radius: 2px;
+	background: var(--nsh-border);
+	opacity: 0;
+	transition: opacity .15s ease, background-color .15s ease;
+}
+
+.nsh-lado-tirador:hover,
+.nsh-lado-tirador.nsh-lado-tirando {
+	background: color-mix(in srgb, var(--nsh-accent) 18%, transparent);
+}
+
+.nsh-lado-tirador:hover::after,
+.nsh-lado-tirador.nsh-lado-tirando::after {
+	opacity: 1;
+	background: var(--nsh-accent);
+}
+
+body.nsh-estirando,
+body.nsh-estirando * {
+	cursor: col-resize !important;
+	user-select: none !important;
+}
+
+@media (pointer: coarse) {
+	.nsh-lado-tirador {
+		width: 14px;
+	}
+
+	.nsh-lado-tirador::after {
+		opacity: .8;
+	}
 }
 
 .nsh-palette-name {
@@ -2069,6 +2142,7 @@ body.nsh-solo-lectura #trash,
 body.nsh-solo-lectura #diagramMenuBtn,
 body.nsh-solo-lectura #newDiagram,
 body.nsh-solo-lectura #newFolder,
+body.nsh-solo-lectura #sortFolders,
 body.nsh-solo-lectura .nsh-row-actions,
 body.nsh-solo-lectura .nsh-row-check,
 body.nsh-solo-lectura #umlBar .uml-btn:not(#umlGuardarUxf),
@@ -2082,18 +2156,18 @@ body.nsh-solo-lectura #sectionDiagram.margin-right {
 
 @media (max-width: 900px) {
 	#diagramsContainer {
-		width: 210px;
+		width: var(--nsh-ancho-izq, 210px);
 	}
 
 	#menuContainer {
-		width: 240px;
+		width: var(--nsh-ancho-der, 240px);
 	}
 
 	.margin-left {
-		margin-left: 210px;
+		margin-left: var(--nsh-ancho-izq, 210px);
 	}
 
 	.margin-right {
-		margin-right: 240px;
+		margin-right: var(--nsh-ancho-der, 240px);
 	}
 }

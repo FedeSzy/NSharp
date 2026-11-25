@@ -6,6 +6,7 @@ function Arbol() {
 	this.buttonOpenDiagrams = document.getElementById("buttonOpenDiagrams");
 	this.buttonCloseDiagrams = document.getElementById("buttonCloseDiagrams");
 	this.newFolderButton = document.getElementById("newFolder");
+	this.sortFoldersButton = document.getElementById("sortFolders");
 	this.activeId = null;
 
 	var tironcito = null;
@@ -678,6 +679,28 @@ function Arbol() {
 		renombrarClase(c.id);
 	};
 
+	this.ordenarEnCarpetas = function (alAbrir) {
+		var r = clases.agruparPorClase(metodos.lista());
+		if (r.movidos) {
+			metodos.reordenar();
+			if (!alAbrir) { util.marcarCambios(); }
+		}
+		_yo.pintar();
+		solapas.pintar();
+		if (alAbrir) { return r; }
+		if (!r.movidos) {
+			util.aviso(r.sinClase && !metodos.lista().some(function (d) { return (d.theClass || "").trim(); })
+				? "Ningún método tiene clase para ordenar"
+				: "Los métodos ya están en la carpeta de su clase");
+			return r;
+		}
+		var partes = [];
+		if (r.creadas) { partes.push(r.creadas === 1 ? "1 carpeta nueva" : r.creadas + " carpetas nuevas"); }
+		partes.push(r.movidos === 1 ? "1 método ubicado" : r.movidos + " métodos ubicados");
+		util.aviso("Se ordenó por clase: " + partes.join(", "));
+		return r;
+	};
+
 	this.renombrarActual = function () {
 		if (lienzo.actualDiagram) { renombrarMetodo(lienzo.actualDiagram); }
 	};
@@ -686,6 +709,9 @@ function Arbol() {
 	enganchar(_yo.buttonCloseDiagrams, "click", _yo.cerrar);
 	if (_yo.newFolderButton) {
 		enganchar(_yo.newFolderButton, "click", _yo.nuevaClase);
+	}
+	if (_yo.sortFoldersButton) {
+		enganchar(_yo.sortFoldersButton, "click", function () { _yo.ordenarEnCarpetas(false); });
 	}
 
 	document.addEventListener("paste", pegarDelSistema);
@@ -701,7 +727,8 @@ function Arbol() {
 				menu.abrir(e.clientX, e.clientY, [
 					{ title: "Proyecto" },
 					{ label: "Nuevo método", icon: "plus-circle", action: nuevoMetodo },
-					{ label: "Nueva clase", icon: "folder-o", action: _yo.nuevaClase }
+					{ label: "Nueva clase", icon: "folder-o", action: _yo.nuevaClase },
+					{ label: "Ordenar en carpetas por clase", icon: "sitemap", action: function () { _yo.ordenarEnCarpetas(false); } }
 				]);
 			}
 		});

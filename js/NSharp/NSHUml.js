@@ -872,6 +872,8 @@ var uml = (function () {
 		if (!t) { return; }
 		var c = elegido ? porId(elegido) : null;
 		var l = elegido ? lineaPorId(elegido) : null;
+		var envoltura = document.getElementById("umlWrap");
+		if (envoltura) { envoltura.classList.toggle("uml-sin-elegir", !c && !l && !grupo.length); }
 		t.disabled = !c && !l;
 		if (grupo.length) {
 			t.value = "";
